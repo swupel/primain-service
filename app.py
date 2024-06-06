@@ -23,7 +23,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    public_key = db.Column(db.String(100), unique=True, nullable=False)
+    address = db.Column(db.String(100), unique=True, nullable=False)
     primains = relationship('Primain', backref='owner', lazy=True)
 
 class Primain(db.Model):
@@ -56,9 +56,13 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        public_key = request.form['public_key']
+        address = request.form['address']
         hashed_password = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_password, public_key=public_key)
+        new_user = User(username=username, password=hashed_password, address=address)
+
+        if not crypto_methods.is_valid_eth_address(address):
+            flash('Address is invalid!', 'danger')
+            return render_template('signup.html')
         
         try:
             db.session.add(new_user)
@@ -70,7 +74,7 @@ def signup():
             if isinstance(e.orig, sqlite3.IntegrityError):
                 if "UNIQUE constraint failed: user.username" in str(e.orig):
                     flash('Username already exists. Please choose a different one.', 'danger')
-                elif "UNIQUE constraint failed: user.public_key" in str(e.orig):
+                elif "UNIQUE constraint failed: user.address" in str(e.orig):
                     flash('Only one account per public key!', 'danger')
                 else:
                     flash('An error occurred during signup. Please try again.', 'danger')
@@ -113,6 +117,9 @@ def register_primain():
 
         new_primain = Primain(primain_name=primain_name, address=address, proof=proof, user_id=current_user.id)
         message = f"{primain_name}{address}"
+
+        if not address == current_user.address:
+            flash('You can only assign primains to an owned address!', 'danger')
 
         try:
             valid = crypto_methods.verify_signature(proof, message, address)
