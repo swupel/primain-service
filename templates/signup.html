@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+<header>
+    <h1>Sign Up</h1>
+</header>
+<main>
+    <form method="POST">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div>
+            <label for="public_key">Public Key:</label>
+            <input type="text" id="public_key" name="public_key" required>
+            <button type="button" id="get-public-key">Get Public Key</button>
+        </div>
+        <button type="submit" class="form-button">Sign Up</button>
+    </form>
+    <p>Already have an account? <a href="{{ url_for('login') }}">Log in here</a>.</p>
+</main>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("get-public-key").addEventListener("click", function() {
+        if (typeof window.ethereum !== 'undefined') {
+            ethereum.request({ method: 'eth_requestAccounts' })
+            .then(function(accounts) {
+                // Access granted, get the public key
+                ethereum.request({
+                    method: 'eth_getEncryptionPublicKey',
+                    params: [accounts[0]], // Use the first account from the array
+                }).then(function(publicKey) {
+                    // Set the public key in the input field
+                    document.getElementById("public_key").value = publicKey;
+                    console.log("Public key:", publicKey);
+                    alert("Public key retrieved: " + publicKey); // Provide feedback to the user
+                }).catch(function(error) {
+                    console.error("Error getting public key:", error);
+                    alert("Error getting public key: " + error.message); // Inform the user of the error
+                });
+            })
+            .catch(function(error) {
+                console.error("Error requesting accounts:", error);
+                alert("Error requesting accounts: " + error.message); // Inform the user of the error
+            });
+        } else {
+            console.error("MetaMask not available");
+            alert("MetaMask is not available. Please install MetaMask to retrieve public key."); // Inform the user that MetaMask is not available
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Manage Wallet{% endblock %}
+{% block content %}
+<header>
+    <h1>Manage Wallet</h1>
+</header>
+<main>
+    <div class="button-container">
+        <a href="/register_primain" class="button">Register new Primain</a>
+        <a href="/view_owned_primains" class="button">View owned Primains</a>
+        <a href="/help" class="button">Help</a>
+    </div>
+    <a href="/logout" class="back-button">Logout</a>
+</main>
+{% endblock %}

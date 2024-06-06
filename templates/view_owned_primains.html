@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}View Owned Primains{% endblock %}
+{% block content %}
+<header>
+    <h1>View Owned Primains</h1>
+</header>
+<main>
+    {% if primains %}
+        <ul>
+            {% for primain in primains %}
+                <li>{{ primain.primain_name }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="message message-info">No Primains found for this user.</p>
+    {% endif %}
+    <a href="/" class="back-button">Back</a>
+</main>
+{% endblock %}
