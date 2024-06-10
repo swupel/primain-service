@@ -10,6 +10,8 @@ from flask_login import LoginManager
 from flask_login import login_user
 import crypto_methods
 import sqlite3
+from flask import jsonify
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -137,6 +139,68 @@ def register_primain():
             flash('Data is invalid!', 'danger')
            
     return render_template('register_primain.html')
+
+@app.route('/register_primain2', methods=['GET', 'POST'])
+@login_required
+def register_primain2():
+    if request.method == 'POST':
+        address = request.form['address']
+
+        if not crypto_methods.is_valid_eth_address(address):
+            flash('Input valid eth address', 'danger')
+            return render_template('register_primain2.html')
+        
+        tx=crypto_methods.get_first_transaction(address)
+        block_index=int(tx["blockNumber"])
+        tx_index=int(tx["transactionIndex"])
+
+        primain=crypto_methods.generate_primain(tx_index,block_index)
+        
+        if tx:
+            return jsonify({'primain': primain})
+        else:
+            flash('Receive funds first!', 'danger')
+        
+           
+    return render_template('register_primain2.html')
+
+@app.route('/get_address', methods=['POST','GET'])
+def get_address():
+    if request.method == 'POST':
+        primain_name = request.form['primain_name']
+
+        # Query the database to find the primain with the given name
+        primain = Primain.query.filter_by(primain_name=primain_name).first()
+
+        if primain:
+            # Return the address associated with the primain
+            return jsonify({'address': primain.address})
+        else:
+            # If primain with the given name is not found, return an error message
+            flash('No Addresses linked to this Primain', 'danger')
+            return render_template('get_address.html')
+    return render_template('get_address.html')
+
+
+@app.route('/get_address2', methods=['POST','GET'])
+def get_address2():
+    if request.method == 'POST':
+        primain_name = request.form['primain_name']
+
+        # Query the database to find the primain with the given name
+        block,tx = crypto_methods.get_index_from_prim_(primain_name)
+        address=crypto_methods.get_tx_by_index(block,tx)
+        if address:
+            # Return the address associated with the primain
+            return jsonify({'address': address})
+        else:
+            # If primain with the given name is not found, return an error message
+            flash('No Addresses linked to this Primain', 'danger')
+            return render_template('get_address.html')
+    return render_template('get_address2.html')
+
+
+        
 
 @app.route('/view_owned_primains')
 @login_required
