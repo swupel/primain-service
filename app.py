@@ -2,7 +2,6 @@ from flask import Flask, render_template, redirect, url_for, request, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from sqlalchemy.orm import lazyload
 from flask_login import UserMixin
 from sqlalchemy.orm import relationship
 from flask_login import login_required, current_user

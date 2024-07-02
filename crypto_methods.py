@@ -1,9 +1,5 @@
 from eth_account.messages import encode_defunct
 from eth_account import Account
-import base64
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.exceptions import InvalidKey
 from dotenv import load_dotenv
 import os
 import requests
