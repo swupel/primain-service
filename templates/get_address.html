@@ -10,19 +10,22 @@
         <input type="text" id="primainName" name="primainName" required>
         <button type="submit" class="button">Get Address</button>
     </form>
+
+    <div id="messageContainer" class="message" style="display: none;"></div>
+
     <div id="addressDisplay" style="display: none;">
-        <div id="addressBox" style="    background-color: #121212; color: #ffffff;border: 1px solid #5af0b9; border-radius: 5px;padding: 15px;margin-bottom: 10px;">
+        <div id="addressBox" style="background-color: #121212; color: #ffffff; border: 1px solid #5af0b9; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
             <span id="addressValue"></span>
             <button id="copyAddressButton" class="button" onclick="copyAddress()">Copy Address</button>
         </div>
     </div>
-    <a href="/" class="back-button">Back</a>
+    <a href="/home" class="back-button">Home</a>
 </main>
 <script>
     document.getElementById('primainForm').addEventListener('submit', function(event) {
         event.preventDefault();
         var primainName = document.getElementById('primainName').value;
-        fetch('/get_address', {
+        fetch('/', {
             method: 'POST',
             body: new URLSearchParams({ primain_name: primainName }),
             headers: {
@@ -31,14 +34,26 @@
         })
         .then(response => response.json())
         .then(data => {
+            var messageContainer = document.getElementById('messageContainer');
+            var addressDisplay = document.getElementById('addressDisplay');
             if (data.error) {
-                alert(error);
+                messageContainer.textContent = data.error;
+                messageContainer.className = 'message danger';
+                messageContainer.style.display = 'block';
+                addressDisplay.style.display = 'none'; // Hide address display on error
             } else {
                 document.getElementById('addressValue').textContent = data.address;
-                document.getElementById('addressDisplay').style.display = 'block';
+                addressDisplay.style.display = 'block';
+                messageContainer.style.display = 'none'; // Hide message container on success
             }
         })
         .catch(error => {
+            var messageContainer = document.getElementById('messageContainer');
+            var addressDisplay = document.getElementById('addressDisplay');
+            messageContainer.textContent = 'An error occurred. Please try again.';
+            messageContainer.className = 'message danger';
+            messageContainer.style.display = 'block';
+            addressDisplay.style.display = 'none'; // Hide address display on error
             console.error('Error:', error);
         });
     });

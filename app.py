@@ -48,7 +48,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@app.route('/')
+@app.route('/home')
 @login_required
 def index():
     return render_template('index.html')
@@ -164,7 +164,7 @@ def register_primain2():
            
     return render_template('register_primain2.html')
 
-@app.route('/get_address', methods=['POST','GET'])
+@app.route('/', methods=['POST','GET'])
 def get_address():
     if request.method == 'POST':
         primain_name = request.form['primain_name']
@@ -175,10 +175,10 @@ def get_address():
         if primain:
             # Return the address associated with the primain
             return jsonify({'address': primain.address})
+
         else:
             # If primain with the given name is not found, return an error message
-            flash('No Addresses linked to this Primain', 'danger')
-            return render_template('get_address.html')
+            return jsonify({'error': 'No Addresses linked to this Primain'}), 404
     return render_template('get_address.html')
 
 
