@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ primain_name }} Address{% endblock %}
+{% block content %}
+<header>
+    <h1>Address for {{ primain_name }}</h1>
+</header>
+<main>
+    {% if error %}
+    <div id="messageContainer" class="message danger">
+        {{ error }}
+    </div>
+    {% else %}
+    <div id="addressDisplay">
+        <div id="addressBox" style="background-color: #121212; color: #ffffff; border: 1px solid #5af0b9; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
+            <span id="addressValue">{{ address }}</span>
+            <button id="copyAddressButton" class="button" onclick="copyAddress()">Copy Address</button>
+        </div>
+    </div>
+    {% endif %}
+    <a href="/home" class="back-button">Home</a>
+</main>
+<script>
+    function copyAddress() {
+        var addressValue = document.getElementById('addressValue');
+        var range = document.createRange();
+        range.selectNode(addressValue);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        window.getSelection().removeAllRanges();
+        alert('Address copied to clipboard');
+    }
+</script>
+{% endblock %}

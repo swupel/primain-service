@@ -140,6 +140,18 @@ def register_primain():
            
     return render_template('register_primain.html')
 
+@app.route('/<primain_name>')
+def display_address(primain_name):
+    # Query the database to find the primain with the given name
+    primain = Primain.query.filter_by(primain_name=primain_name).first()
+    
+    if primain:
+        # Render the template with the address and the primain name
+        return render_template('display_address.html', address=primain.address, primain_name=primain_name, error=None)
+    else:
+        # Render the template with an error message
+        return render_template('display_address.html', address=None, primain_name=primain_name, error='No Addresses linked to this Primain')
+
 @app.route('/register_primain2', methods=['GET', 'POST'])
 @login_required
 def register_primain2():
