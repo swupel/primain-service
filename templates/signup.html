@@ -14,39 +14,9 @@
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <div>
-            <label for="address">Enter Address:</label>
-            <input type="text" id="address" name="address" required>
-            <button type="button" id="import-address" class="small-button">Get address from Metamask</button>
-        </div>
         <button type="submit" class="form-button">Sign Up</button>
     </form>
     <p>Already have an account? <a href="{{ url_for('login') }}">Log in here</a>.</p>
 </main>
-
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById("import-address").addEventListener("click", function() {
-            if (typeof window.ethereum !== 'undefined') {
-                // Request access to MetaMask
-                ethereum.request({ method: 'eth_requestAccounts' })
-                .then(function(accounts) {
-                    // Access granted, set the first account as the address
-                    document.getElementById("address").value = accounts[0];
-                    console.log("Address imported:", accounts[0]);
-                    alert("Address imported: " + accounts[0]); // Provide feedback to the user
-                })
-                .catch(function(error) {
-                    console.error("Error requesting accounts:", error);
-                    alert("Error requesting accounts: " + error.message); // Inform the user of the error
-                });
-            } else {
-                console.error("MetaMask not available");
-                alert("MetaMask is not available. Please install MetaMask to import the address."); // Inform the user that MetaMask is not available
-            }
-        });
-        })
-</script>
 {% endblock %}
 

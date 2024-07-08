@@ -140,28 +140,48 @@ p a:hover {
     color: #ffffff;
 }
 
-/* Add this CSS to your stylesheet */
+.network-option {
+    display: flex;
+    align-items: center;
+}
+
+.network-option img {
+    margin-right: 8px;
+    width: 20px;
+    height: 20px;
+}
+
 ul {
     list-style-type: none;
     padding: 0;
 }
 
 li {
-    background-color: #121212; /* Dark background color */
-    color: #ffffff; /* Light text color */
-    border: 1px solid #5af0b9; /* Accent color */
+    background-color: #121212;
+    color: #ffffff;
+    border: 1px solid #5af0b9;
     border-radius: 5px;
     padding: 15px;
     margin-bottom: 10px;
 }
 
 li:hover {
-    background-color: #1e1e1e; /* Darker background color on hover */
+    background-color: #1e1e1e;
+}
+
+/* Remove default blue link color */
+li a {
+    color: inherit; /* Inherit parent color (white) */
+    text-decoration: none; /* Remove underline */
+}
+
+li a:hover {
+    color: #4dc0a1; /* Hover color */
 }
 
 .back-button {
-    background-color: #5af0b9; /* Accent color */
-    color: #121212; /* Dark text color */
+    background-color: #5af0b9;
+    color: #121212;
     text-decoration: none;
     padding: 15px 30px;
     border-radius: 8px;
@@ -173,19 +193,17 @@ li:hover {
 }
 
 .back-button:hover {
-    background-color: #4dc0a1; /* Darker accent color on hover */
+    background-color: #4dc0a1;
 }
 
-
-/* New smaller button styles */
 .small-button {
     background-color: #5af0b9;
     color: #121212;
     text-decoration: none;
-    padding: 9px 14px; /* Smaller padding */
+    padding: 9px 14px;
     border-radius: 5px;
     text-align: center;
-    font-size: 1rem; /* Smaller font size */
+    font-size: 1rem;
     transition: background-color 0.3s;
     cursor: pointer;
 }
@@ -194,3 +212,69 @@ li:hover {
     background-color: #4dc0a1;
 }
 
+.custom-select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.custom-select {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #333;
+    color: #ffffff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.arrow {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #ffffff;
+}
+
+.custom-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #333;
+    color: #ffffff;
+    border-radius: 5px;
+    z-index: 999;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.custom-select.opened .custom-options {
+    display: block;
+}
+
+.custom-option {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.custom-option:hover {
+    background-color: #444;
+}
+
+.custom-option img {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+}

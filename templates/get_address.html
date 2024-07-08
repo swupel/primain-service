@@ -13,10 +13,13 @@
 
     <div id="messageContainer" class="message" style="display: none;"></div>
 
-    <div id="addressDisplay" style="display: none;">
-        <div id="addressBox" style="background-color: #121212; color: #ffffff; border: 1px solid #5af0b9; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
-            <span id="addressValue"></span>
-            <button id="copyAddressButton" class="button" onclick="copyAddress()">Copy Address</button>
+    <div id="addressDisplay" style="display: none; text-align: center;">
+        <div id="addressBox" style="background-color: #121212; color: #ffffff; border: 1px solid #5af0b9; border-radius: 5px; padding: 15px; margin-bottom: 10px; display: inline-block;">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <div id="networkLogoContainer" style="margin-right: 8px;"></div>
+                <span id="addressValue" style="font-size: 18px;"></span>
+            </div>
+            <button id="copyAddressButton" class="button" onclick="copyAddress()" style="display: block; margin: 0 auto;">Copy Address</button>
         </div>
     </div>
     <a href="/home" class="back-button">Home</a>
@@ -36,13 +39,38 @@
         .then(data => {
             var messageContainer = document.getElementById('messageContainer');
             var addressDisplay = document.getElementById('addressDisplay');
+            var addressValue = document.getElementById('addressValue');
             if (data.error) {
                 messageContainer.textContent = data.error;
                 messageContainer.className = 'message danger';
                 messageContainer.style.display = 'block';
                 addressDisplay.style.display = 'none'; // Hide address display on error
             } else {
-                document.getElementById('addressValue').textContent = data.address;
+                addressValue.textContent = data.address;
+                
+                // Clear previous network logos
+                var networkLogoContainer = document.getElementById('networkLogoContainer');
+                networkLogoContainer.innerHTML = '';
+
+                // Create network logo and title
+                if (data.network === 'ethereum') {
+                    var networkLogo = document.createElement('img');
+                    networkLogo.src = 'static/ethereum-eth-logo.png';
+                    networkLogo.alt = 'Ethereum';
+                    networkLogo.style.width = '30px';
+                    networkLogo.style.height = '30px';
+                    networkLogo.title = 'This Address is only valid on the Ethereum Mainnet';
+                    networkLogoContainer.appendChild(networkLogo);
+                } else if (data.network === 'polygon') {
+                    var networkLogo = document.createElement('img');
+                    networkLogo.src = 'static/polygon-matic-logo.png';
+                    networkLogo.alt = 'Polygon';
+                    networkLogo.style.width = '30px';
+                    networkLogo.style.height = '30px';
+                    networkLogo.title = 'This Address is only valid on the Polygon Mainnet';
+                    networkLogoContainer.appendChild(networkLogo);
+                }
+
                 addressDisplay.style.display = 'block';
                 messageContainer.style.display = 'none'; // Hide message container on success
             }

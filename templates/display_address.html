@@ -12,8 +12,16 @@
     {% else %}
     <div id="addressDisplay">
         <div id="addressBox" style="background-color: #121212; color: #ffffff; border: 1px solid #5af0b9; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
-            <span id="addressValue">{{ address }}</span>
-            <button id="copyAddressButton" class="button" onclick="copyAddress()">Copy Address</button>
+            <div style="display: flex; align-items: center;">
+                {% if network == 'ethereum' %}
+                    <img src="static/ethereum-eth-logo.png" alt="Ethereum" title="This Address is only valid on the Ethereum Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
+                {% endif %}
+                {% if network == 'polygon' %}
+                <img src="static\polygon-matic-logo.png" alt="polygon" title="This Address is only valid on the Polygon Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
+                {% endif %}
+                <span id="addressValue" style="font-size: 18px;">{{ address }}</span>
+            </div>
+            <button id="copyAddressButton" class="button" onclick="copyAddress()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Address</button>
         </div>
     </div>
     {% endif %}

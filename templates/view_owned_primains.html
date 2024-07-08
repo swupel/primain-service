@@ -8,7 +8,9 @@
     {% if primains %}
         <ul>
             {% for primain in primains %}
-                <li>{{ primain.primain_name }}</li>
+                <li>
+                    <a href="/{{ primain.primain_name }}" class="primain-link">{{ primain.primain_name }}</a>
+                </li>
             {% endfor %}
         </ul>
     {% else %}

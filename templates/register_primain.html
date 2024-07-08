@@ -16,11 +16,36 @@
             <button type="button" id="import-address" class="small-button">Import Address</button>
         </div>
         <div class="field-with-button">
+            <label for="chain">Blockchain Network:</label>
+            <div class="custom-select-wrapper">
+                <div class="custom-select">
+                    <div class="custom-select-trigger">
+                        <span>Select a Network</span>
+                        <div class="arrow"></div>
+                    </div>
+                    <div class="custom-options">
+                        <span class="custom-option network-option" data-value="1" data-name="ethereum">
+                            <img src="static/ethereum-eth-logo.png" alt="Ethereum"> Ethereum
+                        </span> 
+                        <span class="custom-option network-option" data-value="137" data-name="polygon">
+                            <img src="static/polygon-matic-logo.png" alt="Polygon"> Polygon
+                        </span> 
+                    </div>
+                </div>
+            </div>
+            <select id="chain" name="chain" style="display: none;">
+                <option value="1">Ethereum</option>
+                <option value="137">Polygon</option>
+            </select>
+            <input type="hidden" id="chain_string" name="chain_string">
+        </div>
+        <div class="field-with-button">
             <label for="proof">Proof:</label>
             <input type="hidden" id="proof" name="proof" value="">
             <input type="text" id="proof_display" name="proof_display" placeholder="Proof will be displayed here" readonly>
             <button type="button" id="sign-proof" class="small-button">Generate Proof</button>
         </div>
+        <input type="hidden" id="signed_data" name="signed_data">
         <button type="submit" class="form-button">Register</button>
     </form>
     <a href="/home" class="back-button">Back</a>
@@ -30,57 +55,96 @@
     document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("import-address").addEventListener("click", function() {
             if (typeof window.ethereum !== 'undefined') {
-                // Request access to MetaMask
                 ethereum.request({ method: 'eth_requestAccounts' })
                 .then(function(accounts) {
-                    // Access granted, set the first account as the address
                     document.getElementById("address").value = accounts[0];
                     console.log("Address imported:", accounts[0]);
-                    alert("Address imported: " + accounts[0]); // Provide feedback to the user
+                    alert("Address imported: " + accounts[0]);
                 })
                 .catch(function(error) {
                     console.error("Error requesting accounts:", error);
-                    alert("Error requesting accounts: " + error.message); // Inform the user of the error
+                    alert("Error requesting accounts: " + error.message);
                 });
             } else {
                 console.error("MetaMask not available");
-                alert("MetaMask is not available. Please install MetaMask to import the address."); // Inform the user that MetaMask is not available
+                alert("MetaMask is not available. Please install MetaMask to import the address.");
             }
         });
 
-    document.getElementById("sign-proof").addEventListener("click", function() {
-        var primainName = document.getElementById("primain_name").value;
-        var address = document.getElementById("address").value;
-        var message = primainName + address;
+        document.getElementById("sign-proof").addEventListener("click", function() {
+            var primainName = document.getElementById("primain_name").value;
+            var address = document.getElementById("address").value;
+            var selectedChainValue = document.getElementById("chain").value;
+            var selectedChainName = document.querySelector(`.custom-option[data-value="${selectedChainValue}"]`).getAttribute("data-name");
+            var message = primainName + selectedChainName + address;
 
-        if (typeof window.ethereum !== 'undefined') {
-            // Request access to MetaMask if not already connected
-            ethereum.request({ method: 'eth_requestAccounts' })
-            .then(function(accounts) {
-                // Access granted, proceed with signature request
-                ethereum.request({
-                    method: 'personal_sign',
-                    params: [message, ethereum.selectedAddress],
-                }).then(function(result) {
-                    // Set the signature as the value of the proof input field
-                    document.getElementById("proof").value = result;
-                    document.getElementById("proof_display").value = result;
-                    console.log("Signature generated:", result);
-                    alert("Signature generated: " + result); // Provide feedback to the user
-                }).catch(function(error) {
-                    console.error("Error signing message:", error);
-                    alert("Error signing message: " + error.message); // Inform the user of the error
+            if (typeof window.ethereum !== 'undefined') {
+                ethereum.request({ method: 'eth_requestAccounts' })
+                .then(function(accounts) {
+                    ethereum.request({ method: 'net_version' })
+                    .then(function(currentChain) {
+                        if (currentChain === selectedChainValue) {
+                            signMessage(message, selectedChainName);
+                        } else {
+                            alert("Please switch to the correct network in MetaMask.");
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("Error fetching network ID:", error);
+                        alert("Error fetching network ID: " + error.message);
+                    });
+                })
+                .catch(function(error) {
+                    console.error("Error requesting accounts:", error);
+                    alert("Error requesting accounts: " + error.message);
                 });
-            })
-            .catch(function(error) {
-                console.error("Error requesting accounts:", error);
-                alert("Error requesting accounts: " + error.message); // Inform the user of the error
+            } else {
+                console.error("MetaMask not available");
+                alert("MetaMask is not available. Please install MetaMask to sign messages.");
+            }
+        });
+
+        function signMessage(message, chainName) {
+            ethereum.request({
+                method: 'personal_sign',
+                params: [message, ethereum.selectedAddress],
+            }).then(function(result) {
+                document.getElementById("proof").value = result;
+                document.getElementById("proof_display").value = result;
+                document.getElementById("chain_string").value = chainName; // Set chain name in hidden input
+                document.getElementById("signed_data").value = message; // Set signed data in hidden input
+                console.log("Signature generated:", result);
+                alert("Signature generated: " + result);
+            }).catch(function(error) {
+                console.error("Error signing message:", error);
+                alert("Error signing message: " + error.message);
             });
-        } else {
-            console.error("MetaMask not available");
-            alert("MetaMask is not available. Please install MetaMask to sign messages."); // Inform the user that MetaMask is not available
         }
+
+        var customSelectTrigger = document.querySelector('.custom-select-trigger');
+        var customOptions = document.querySelectorAll('.custom-option');
+        var customSelect = document.querySelector('.custom-select');
+        var selectElement = document.getElementById('chain');
+
+        customSelectTrigger.addEventListener('click', function() {
+            customSelect.classList.toggle('opened');
+        });
+
+        customOptions.forEach(function(option) {
+            option.addEventListener('click', function() {
+                var value = option.getAttribute('data-value');
+                var text = option.textContent.trim();
+                selectElement.value = value;
+                customSelectTrigger.querySelector('span').textContent = text;
+                customSelect.classList.remove('opened');
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('opened');
+            }
+        });
     });
-});
 </script>
 {% endblock %}
