@@ -66,8 +66,8 @@
                     alert("Error requesting accounts: " + error.message);
                 });
             } else {
-                console.error("MetaMask not available");
-                alert("MetaMask is not available. Please install MetaMask to import the address.");
+                console.error("Wallet not available");
+                alert("Wallet is not available. Please install a Wallet to import the address.");
             }
         });
 
@@ -86,7 +86,7 @@
                         if (currentChain === selectedChainValue) {
                             signMessage(message, selectedChainName);
                         } else {
-                            alert("Please switch to the correct network in MetaMask.");
+                            alert("Please switch to the correct network in your wallet of choice.");
                         }
                     })
                     .catch(function(error) {
@@ -99,8 +99,8 @@
                     alert("Error requesting accounts: " + error.message);
                 });
             } else {
-                console.error("MetaMask not available");
-                alert("MetaMask is not available. Please install MetaMask to sign messages.");
+                console.error("Wallet not available");
+                alert("Wallet is not available. Please install a wallet to sign messages.");
             }
         });
 
