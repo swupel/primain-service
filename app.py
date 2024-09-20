@@ -1,6 +1,6 @@
 #Manage partial imports
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
-from flask_login import login_required, current_user,login_user,LoginManager,UserMixin
+from flask_login import login_required, current_user,login_user,LoginManager,UserMixin,logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
@@ -181,17 +181,18 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    """logs out the current user
+    """Logs out the current user.
 
     Returns:
         html page: Redirects to landing page
     """
     
-    #kill current session and inform the user
-    session.pop('user_id', None)
+    # Use Flask-Login's logout_user function to log out
+    logout_user()
     flash('You have been logged out.', 'info')
     
-    return redirect(url_for('index'))
+    return redirect('/') # Redirect to login page or home
+
 
 @app.route('/register_primain', methods=['GET', 'POST'])
 @login_required
@@ -243,7 +244,7 @@ def register_primain():
                 except:
                     flash('Primain Name is Already Taken!', 'danger')
             else:
-                flash('Data is invalid!', 'danger')
+                flash('Data is invalid, Check connected Network!', 'danger')
         except:
             flash('Data is invalid!', 'danger')
     
