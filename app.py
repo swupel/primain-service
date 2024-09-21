@@ -9,6 +9,7 @@ from functools import wraps
 #Manage full imports
 import crypto_methods
 import sqlite3
+import json
 
 #Configure flask app
 app = Flask("Swupel Primain Service")
@@ -224,7 +225,7 @@ def register_primain():
         signature=crypto_methods.serialize_signature_to_string(crypto_methods.sign_message(f"{primain_name}{address}{chain}{proof}".encode()))
 
         #create new primain object and build message string 
-        new_primain = Primain(primain_name=primain_name, address=address, chain=chain,proof=proof,signature=signature, user_id=current_user.id)
+        new_primain = Primain(primain_name=primain_name, address=json.dumps([address]), chain=json.dumps([chain]),proof=json.dumps([proof]),signature=json.dumps([signature]), user_id=current_user.id)
         message = f"{primain_name}{chain}{address}"
 
         try:
@@ -246,7 +247,42 @@ def register_primain():
             
                 #Or flash errors depending on what went wrong 
                 except:
-                    flash('Primain Name is Already Taken!', 'danger')
+                    db.session.rollback()
+                    primain = Primain.query.filter_by(primain_name=primain_name).first()
+                    
+                    if primain.user_id != current_user.id:
+                        flash('You are not the Owner of this Primain!', 'danger')
+                    elif proof in json.loads(primain.proof):
+                        flash('You have already added this Address to your Primain!', 'danger')
+                    else:
+                        
+                        try:
+
+                            new_address=json.loads(primain.address)
+                            new_address.append(address)
+                            primain.address=json.dumps(new_address)
+                            
+                            new_chain=json.loads(primain.chain)
+                            new_chain.append(chain)
+                            primain.chain=json.dumps(new_chain)
+                            
+                            new_proof=json.loads(primain.proof)
+                            new_proof.append(proof)
+                            primain.proof=json.dumps(new_proof)
+                            
+                            new_signature=json.loads(primain.signature)
+                            new_signature.append(signature)
+                            primain.signature=json.dumps(new_signature)
+                            
+                            #try adding the new Primain to the database
+                            db.session.commit()
+                            #inform user of success
+                            flash('Primain registration successful!', 'success')
+                            return redirect(url_for('index'))
+
+                        except:
+                            flash("An error occured!", 'danger')
+                    
             else:
                 flash('Data is invalid, Check connected Network!', 'danger')
         except:
@@ -271,41 +307,27 @@ def display_address(primain_name):
     #if found
     if primain:
         
-        data=f"Primain name: {primain_name}\nPrimain Address: {primain.address}\nBlockchain Network: {primain.chain}\nUser Proof: {primain.proof} \nBackend Signature: {primain.signature} \nPublic Key: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys(crypto_methods.PASSWORD)[1])}\nString that was signed: {primain_name}{primain.address}{primain.chain}{primain.proof}"
+        data=f"Primain name: {primain_name}\nPrimain Addresses: {primain.address}\nBlockchain Networks: {primain.chain}\nUser Proofs: {primain.proof} \nBackend Signatures: {primain.signature} \nPublic Keys: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys(crypto_methods.PASSWORD)[1])}\nStructure of signed string that was signed: primain_name+primain.address+primain.chain+primain.proof"
         # Render the template with the address and the primain name
-        return render_template('display_address.html', address=primain.address, primain_name=primain_name,network=primain.chain, data=data, error=None)
+        return render_template('display_address.html', address=json.loads(primain.address), primain_name=primain_name,network=json.loads(primain.chain), data=data, error=None)
     
     else:
         # Render the template with an error message
         return render_template('display_address.html', address=None, primain_name=primain_name, network=None, error='No Addresses linked to this Primain')
 
-@app.route('/', methods=['POST','GET'])
+@app.route('/', methods=['POST', 'GET'])
 def get_address():
-    """retrieves address linked to a primain
-
-    Returns:
-        string: Address linked to the primain
-    """
-    
-    #If user has filled out form
     if request.method == 'POST':
-        
-        #retrive data and qurey for inputted name
         primain_name = request.form['primain_name']
         primain = Primain.query.filter_by(primain_name=primain_name).first()
-
-        #If this search was successfull
         if primain:
-            
-            # Return the address associated with the primain
-            return jsonify({'address': primain.address, 'network':primain.chain})
-
+            return jsonify({'redirect': url_for('display_address', primain_name=primain_name)})
         else:
-            # If primain with the given name is not found, return an error message
-            return jsonify({'error': 'No Addresses linked to this Primain'}), 404
-        
-    #If request was a normal get request just display the html page
+            return jsonify({'error': 'No Primain With This Name was Found!'})
+    
     return render_template('get_address.html')
+
+
         
 
 @app.route('/view_owned_primains')

@@ -55,34 +55,59 @@
                 { "id": '133', "name": 'Zcash', "logo": 'static/zcash-zec-logo.png' },
                 { "id": 'QNT', "name": 'Quant', "logo": 'static/quant-qnt-logo.png' },
             ]%}
-
-
-            {% for chain in networks %}
-                {% if chain.name == network %}
-                    <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
-                {% endif %}
-            {% endfor %}
-                <span id="addressValue" style="font-size: 18px;">{{ address }}</span>
+            
+                <div style="display: flex; flex-direction: column;">
+                    {% for net in network %}
+                        {% set counter = loop.index0 %}
+                        {% for chain in networks %}
+                            {% if net == chain.name %}
+                                <div style="margin-bottom: 20px; display: flex; align-items: center;">
+                                    <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
+                                    <span style="font-size: 18px;">{{ address[counter] }}</span>
+                                    <button id="copyAddressButton{{ address[counter] }}" class="button" onclick="copyAddress('{{ address[counter] }}')" style="margin-left: 10px;">Copy Address</button>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
                 <div id="verificationData" style="display:none;">{{ data }}</div>
-            </div>
-            <button id="copyAddressButton" class="button" onclick="copyAddress()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Address</button>
-            <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
         </div>
+        
     </div>
+    <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
     {% endif %}
-    <a href="/home" class="back-button">Home</a>
+    {% if current_user.is_authenticated %}
+        <a href="/home" class="back-button">Home</a>
+    {% else %}
+        <a href="/" class="back-button">Back</a>
+    {% endif %}
+
+    
 </main>
 <script>
-    function copyAddress() {
-        var addressValue = document.getElementById('addressValue');
-        var range = document.createRange();
-        range.selectNode(addressValue);
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
+
+    function copyAddress(address) {
+        // Create a temporary textarea element
+        const tempInput = document.createElement('textarea');
+        tempInput.value = address;
+        
+        // Append to the body
+        document.body.appendChild(tempInput);
+        
+        // Select the text
+        tempInput.select();
+        tempInput.setSelectionRange(0, 99999); // For mobile devices
+        
+        // Copy the text
         document.execCommand('copy');
-        window.getSelection().removeAllRanges();
-        alert('Address copied to clipboard');
+        
+        // Remove the temporary element
+        document.body.removeChild(tempInput);
+        
+        // Optional: Alert the user
+        alert('Address copied: ' + address);
     }
+        
     function copyData() {
         // Access the hidden verification data element
         var dataValue = document.getElementById('verificationData').innerText;
