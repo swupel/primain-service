@@ -58,13 +58,15 @@
 
 
             {% for chain in networks %}
-            {% if chain.name == network %}
-                <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
-            {% endif %}
-        {% endfor %}
+                {% if chain.name == network %}
+                    <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
+                {% endif %}
+            {% endfor %}
                 <span id="addressValue" style="font-size: 18px;">{{ address }}</span>
+                <div id="verificationData" style="display:none;">{{ data }}</div>
             </div>
             <button id="copyAddressButton" class="button" onclick="copyAddress()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Address</button>
+            <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
         </div>
     </div>
     {% endif %}
@@ -80,6 +82,24 @@
         document.execCommand('copy');
         window.getSelection().removeAllRanges();
         alert('Address copied to clipboard');
+    }
+    function copyData() {
+        // Access the hidden verification data element
+        var dataValue = document.getElementById('verificationData').innerText;
+        
+        // Create a temporary element to select the text
+        var tempElem = document.createElement('textarea');
+        tempElem.value = dataValue;
+        document.body.appendChild(tempElem);
+
+        // Select and copy the text
+        tempElem.select();
+        document.execCommand('copy');
+
+        // Remove the temporary element
+        document.body.removeChild(tempElem);
+
+        alert('Verification Data copied to clipboard');
     }
 </script>
 {% endblock %}

@@ -57,6 +57,7 @@ class Primain(db.Model):
     address = db.Column(db.String(100), nullable=False)
     chain =  db.Column(db.String(100), nullable=False)
     proof = db.Column(db.String(100), nullable=False)
+    signature = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 @login_manager.user_loader
@@ -218,9 +219,12 @@ def register_primain():
             #inform user if that is the case
             flash('You can only own a maximum of 3 primains.', 'danger')
             return redirect(url_for('register_primain'))
+        
+        #Create signature
+        signature=crypto_methods.serialize_signature_to_string(crypto_methods.sign_message(f"{primain_name}{address}{chain}{proof}".encode()))
 
         #create new primain object and build message string 
-        new_primain = Primain(primain_name=primain_name, address=address, chain=chain,proof=proof, user_id=current_user.id)
+        new_primain = Primain(primain_name=primain_name, address=address, chain=chain,proof=proof,signature=signature, user_id=current_user.id)
         message = f"{primain_name}{chain}{address}"
 
         try:
@@ -267,8 +271,9 @@ def display_address(primain_name):
     #if found
     if primain:
         
+        data=f"Primain name: {primain_name}\nPrimain Address: {primain.address}\nBlockchain Network: {primain.chain}\nUser Proof: {primain.proof} \nBackend Signature: {primain.signature} \nPublic Key: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys(crypto_methods.PASSWORD)[1])}\nString that was signed: {primain_name}{primain.address}{primain.chain}{primain.proof}"
         # Render the template with the address and the primain name
-        return render_template('display_address.html', address=primain.address, primain_name=primain_name,network=primain.chain, error=None)
+        return render_template('display_address.html', address=primain.address, primain_name=primain_name,network=primain.chain, data=data, error=None)
     
     else:
         # Render the template with an error message
