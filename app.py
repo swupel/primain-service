@@ -12,14 +12,13 @@ from flask_mail import Mail, Message
 
 #Manage full imports
 import crypto_methods
-import sqlite3
 import json
 import stripe
 import os
 
 #Configure flask app
 app = Flask("Swupel Primain Service")
-app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SECRET_KEY'] = crypto_methods.PASSWORD
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
 # Generate a serializer object with the app's secret key
@@ -133,6 +132,56 @@ class Primain(db.Model):
     proof = db.Column(db.String(100), nullable=False)
     signature = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+def send_password_reset_email(user_email):
+    token = generate_verification_token(user_email)  # Reuse the existing token generation
+    reset_url = url_for('reset_with_token', token=token, _external=True)
+
+    msg = Message(
+        'Reset Your Password',
+        recipients=[user_email],
+    )
+    msg.html = f"""
+    <html>
+        <body>
+            <p>To reset your password, click the following link:</p>
+            <p><a href="{reset_url}">Reset Password</a></p>
+        </body>
+    </html>
+    """
+    mail.send(msg)
+
+@app.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_with_token(token):
+    email = confirm_verification_token(token)
+    if email is False:
+        flash('The reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.password = generate_password_hash(password, method='scrypt')
+            db.session.commit()
+            flash('Your password has been updated! You can now log in.', 'success')
+            return redirect(url_for('login'))
+
+    return render_template('reset_with_token.html')
+
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        user = User.query.filter_by(email=email).first()
+        if user:
+            send_password_reset_email(user.email)
+            flash('A password reset email has been sent.', 'success')
+        else:
+            flash('Email address not found.', 'danger')
+    return render_template('reset_password.html')
+
 
 @login_manager.user_loader
 def load_user(user_id):
