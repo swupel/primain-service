@@ -41,11 +41,13 @@
             </label>
         </div>
         <input type="hidden" id="signed_data" name="signed_data">
-        <button type="submit" class="form-button">Register</button>
+        <input type="hidden" id="payment-intent" name="payment_intent">  <!-- For payment intent -->
+        <button type="submit" class="form-button">Proceed to Checkout</button>
     </form>
     <a href="/home" class="back-button">Back</a>
 </main>
 
+<script src="https://js.stripe.com/v3/"></script> <!-- Include Stripe.js -->
 <script>
     const networks = [
         { id: '1', name: 'Ethereum', logo: 'static/ethereum-eth-logo.png' },
@@ -196,6 +198,6 @@
                 customSelect.classList.remove('opened');
             }
         });
-    });
+    })
 </script>
 {% endblock %}

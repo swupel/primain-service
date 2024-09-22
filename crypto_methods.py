@@ -1,6 +1,7 @@
 #manage partial imports
 from eth_account.messages import encode_defunct
 from eth_account import Account
+from dotenv import load_dotenv
 
 #Import crypto methods
 from cryptography.hazmat.primitives import serialization,hashes
@@ -9,6 +10,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.exceptions import InvalidSignature
 import hashlib
 import base64
+import os
+
+load_dotenv()
 
 def set_password():
     password=input("Input Password: ")
@@ -66,7 +70,7 @@ def is_valid_eth_address(address):
     #confirm success
     return True
 
-def generate_ec_key_pair(PASSWORD):
+def generate_ec_key_pair():
     """
     Generates SECP256R1 keypair
     Returns private_key, public_key
@@ -78,16 +82,15 @@ def generate_ec_key_pair(PASSWORD):
     #Public key gets generated from private key
     public_key = private_key.public_key()
     
-    with open("key.env",mode="w") as f:
-        f.write(serialize_private_key_to_string(private_key,PASSWORD))
-
+    print("Encoded key: ",base64.b64encode(serialize_private_key_to_string(private_key,PASSWORD).encode()).decode('utf-8')[:-1])
     return private_key, public_key
 
-def load_keys(PASSWORD):
+def load_keys():
     
     try: 
-        with open("key.env",mode="r") as f:
-            private_key=deserialize_string_to_private_key(f.read(),PASSWORD.encode())
+        private_key=os.getenv('private_key')+"="
+        private_key=base64.b64decode(private_key.encode()).decode('utf-8')
+        private_key=deserialize_string_to_private_key(private_key,PASSWORD.encode())
     
     except ValueError:
         print("Decryption Password is Invalid, Key Cannot be Loaded! ")
@@ -180,7 +183,7 @@ def sign_message(message):
     Signs the message using (private_key, message) using SECP256R1
     Returns signature
     """
-    private_key,public_key=load_keys(PASSWORD)
+    private_key,public_key=load_keys()
 
     #Sign message with private key
     signature = private_key.sign(message,ec.ECDSA(hashes.SHA256()))

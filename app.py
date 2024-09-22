@@ -5,11 +5,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+from dotenv import load_dotenv
 
 #Manage full imports
 import crypto_methods
 import sqlite3
 import json
+import stripe
+import os
 
 #Configure flask app
 app = Flask("Swupel Primain Service")
@@ -21,6 +24,8 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+load_dotenv()
+SUCCESSES={}
 class User(UserMixin, db.Model):
     """User class used to hold data of individual accounts
 
@@ -195,6 +200,37 @@ def logout():
     
     return redirect('/') # Redirect to login page or home
 
+@app.route('/success', methods=['GET'])
+@login_required
+def sucess():
+    #try adding the new Primain to the database
+    if SUCCESSES[current_user.id]:
+        session_id=SUCCESSES[current_user.id][1].id
+        
+        checkout_session = stripe.checkout.Session.retrieve(
+        session_id,
+        expand=['line_items'],
+        )
+        
+        if checkout_session.payment_status == "paid":
+            db.session.add(SUCCESSES[current_user.id][0])
+            db.session.commit()
+        else:
+            flash('Pyment Failed!', 'danger')
+    else:
+        flash('Register Primain!', 'danger')
+    
+    checkout_session = stripe.checkout.Session.retrieve(
+    session_id,
+    expand=['line_items'],
+    )
+    
+    
+    del SUCCESSES[current_user.id]
+    #inform user of success
+    flash('Primain registration successful!', 'success')
+    return render_template("index.html")
+
 
 @app.route('/register_primain', methods=['GET', 'POST'])
 @login_required
@@ -214,12 +250,6 @@ def register_primain():
         address = request.form['address']
         chain = request.form['chain_string']
           
-        #check if user has exceeded max amount of primains
-        if len(current_user.primains) >= 3:
-            
-            #inform user if that is the case
-            flash('You can only own a maximum of 3 primains.', 'danger')
-            return redirect(url_for('register_primain'))
         
         #Create signature
         signature=crypto_methods.serialize_signature_to_string(crypto_methods.sign_message(f"{primain_name}{address}{chain}{proof}".encode()))
@@ -227,7 +257,9 @@ def register_primain():
         #create new primain object and build message string 
         new_primain = Primain(primain_name=primain_name, address=json.dumps([address]), chain=json.dumps([chain]),proof=json.dumps([proof]),signature=json.dumps([signature]), user_id=current_user.id)
         message = f"{primain_name}{chain}{address}"
-
+        
+        SUCCESSES[current_user.id]=[new_primain,""]
+        primain = Primain.query.filter_by(primain_name=primain_name).first()
         try:
             
             #verify if user actually owns the address
@@ -236,19 +268,38 @@ def register_primain():
             #if thats the case
             if valid:
                 
-                try:
-                    #try adding the new Primain to the database
-                    db.session.add(new_primain)
-                    db.session.commit()
+                if not primain:
+                    #check if user has exceeded max amount of primains
+                    if len(current_user.primains) >= 3:
+                        
+                        #inform user if that is the case
+                        flash('You can only own a maximum of 3 primains.', 'danger')
+                        return redirect(url_for('register_primain'))
+
                     
-                    #inform user of success
-                    flash('Primain registration successful!', 'success')
-                    return redirect(url_for('index'))
+                    stripe.api_key = os.getenv('stripe_key')
+
+                    session = stripe.checkout.Session.create(
+                    line_items=[{
+                    'price_data': {
+                        'currency': 'eur',
+                        'product_data': {
+                        'name': f'Purchase the {primain_name} Primain',
+                        },
+                        'unit_amount': 2000,
+                    },
+                    'quantity': 1,
+                    }],
+                    mode='payment',
+                    success_url=f'http://localhost:5000/success',
+                    cancel_url='http://localhost:5000/register_primain')
+
+                    SUCCESSES[current_user.id]=[new_primain,session]
+                    return redirect(session.url, code=303)
             
-                #Or flash errors depending on what went wrong 
-                except:
+                else:
+
                     db.session.rollback()
-                    primain = Primain.query.filter_by(primain_name=primain_name).first()
                     
                     if primain.user_id != current_user.id:
                         flash('You are not the Owner of this Primain!', 'danger')
@@ -307,7 +358,7 @@ def display_address(primain_name):
     #if found
     if primain:
         
-        data=f"Primain name: {primain_name}\nPrimain Addresses: {primain.address}\nBlockchain Networks: {primain.chain}\nUser Proofs: {primain.proof} \nBackend Signatures: {primain.signature} \nPublic Keys: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys(crypto_methods.PASSWORD)[1])}\nStructure of signed string that was signed: primain_name+primain.address+primain.chain+primain.proof"
+        data=f"Primain name: {primain_name}\nPrimain Addresses: {primain.address}\nBlockchain Networks: {primain.chain}\nUser Proofs: {primain.proof} \nBackend Signatures: {primain.signature} \nPublic Keys: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys()[1])}\nStructure of signed string that was signed: primain_name+primain.address+primain.chain+primain.proof"
         # Render the template with the address and the primain name
         return render_template('display_address.html', address=json.loads(primain.address), primain_name=primain_name,network=json.loads(primain.chain), data=data, error=None)
     
@@ -326,9 +377,6 @@ def get_address():
             return jsonify({'error': 'No Primain With This Name was Found!'})
     
     return render_template('get_address.html')
-
-
-        
 
 @app.route('/view_owned_primains')
 @login_required
