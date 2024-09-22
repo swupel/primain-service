@@ -4,8 +4,11 @@ from flask_login import login_required, current_user,login_user,LoginManager,Use
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
+from itsdangerous import URLSafeTimedSerializer
 from functools import wraps
 from dotenv import load_dotenv
+from flask_mail import Mail, Message
+
 
 #Manage full imports
 import crypto_methods
@@ -19,30 +22,95 @@ app = Flask("Swupel Primain Service")
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
+# Generate a serializer object with the app's secret key
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+def generate_verification_token(email):
+    return s.dumps(email, salt=app.config['SECRET_KEY'])
+
+def confirm_verification_token(token, expiration=3600):
+    try:
+        email = s.loads(token, salt=app.config['SECRET_KEY'], max_age=expiration)
+    except:
+        return False
+    return email
+
 #Configure database and login manager
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 load_dotenv()
-SUCCESSES={}
-class User(UserMixin, db.Model):
-    """User class used to hold data of individual accounts
 
-    Args:
-        UserMixin (Class): provides default methods for user management
-        db (Class): Current database model
-        
-    Attributes:
-        id: Primary DB key
-        username: Costum unique username of every user
-        password: Salted and hashed password of every user
-        primains: Owned Primains of every user (links to primain Class
+# Mail configuration
+app.config['MAIL_SERVER'] = 'swupelpms.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True  # Use SSL for secure communication
+app.config['MAIL_USE_TLS'] = False 
+app.config['MAIL_USERNAME'] = "info@swupelpms.com"  # Your email
+app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PASS')  # Your email password
+app.config['MAIL_DEFAULT_SENDER'] = "info@swupelpms.com"  # Default sender
+
+mail = Mail(app)
+
+SUCCESSES={}
+
+# Generate a serializer object with the app's secret key
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+def generate_verification_token(email):
+    return s.dumps(email, salt=app.config['SECRET_KEY'])
+
+def confirm_verification_token(token, expiration=3600):
+    try:
+        email = s.loads(token, salt=app.config['SECRET_KEY'], max_age=expiration)
+    except:
+        return False
+    return email
+
+def send_verification_email(user_email):
+    
+    token = generate_verification_token(user_email)
+    verify_url = url_for('verify_email', token=token, _external=True)  # Generate verification URL
+    
+# Create the email message
+    msg = Message(
+        'Confirm Your Email',  # Subject of the email
+        recipients=[user_email],  # Recipient email
+    )
+    
+    # HTML email content
+    msg.html = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; color: #e0e0e0; background-color: #192525;">
+            <div style="max-width: 600px; margin: auto; padding: 20px; border: 1px solid #333; border-radius: 8px; background-color: #1e1e1e;">
+                <h2 style="text-align: center; color: #5af0b9;">Welcome to Swupel!</h2>
+                <p>Hello,</p>
+                <p>Thank you for registering with us! Please confirm your email address to complete the signup process and start using our service.</p>
+                <p style="text-align: center;">
+                    <a href="{verify_url}" style="background-color: #5af0b9; color: #192525; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Confirm Email</a>
+                </p>
+                <p>If the button doesn't work, you can also confirm your email by clicking the following link:</p>
+                <p><a href="{verify_url}" style="color: #5af0b9;">{verify_url}</a></p>
+                <p>Best regards,<br>Swupel Team</p>
+                <hr style="border: 0; border-top: 1px solid #333;">
+                <p style="font-size: 12px; color: #888;">If you didn’t request this, please ignore this email.</p>
+            </div>
+        </body>
+    </html>
     """
+    
+    # Send the email
+    mail.send(msg)
+    
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)  # Add email field
     password = db.Column(db.String(100), nullable=False)
+    email_verified = db.Column(db.Boolean, default=False)  # Email verification status
     primains = relationship('Primain', backref='owner', lazy=True)
+
 
 class Primain(db.Model):
     """Primain class used to hold data of all registered Primains
@@ -109,81 +177,67 @@ def index():
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
-    """Handles all requests to the signup page
-
-    Returns:
-        html page: Either login or signup html page
-    """
-    
-    #If request is a post request (user submitted form)
     if request.method == 'POST':
-        
-        #Get form data
         username = request.form['username']
         password = request.form['password']
+        email = request.form['email']  # Add email input field in the form
         
-        #Hash password and create new user
         hashed_password = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_password)
-        
+        new_user = User(username=username, password=hashed_password, email=email, email_verified=False)
+
         try:
-            #Add new user to the DB 
             db.session.add(new_user)
             db.session.commit()
-            
-            #confirm and redirec if successfull
-            flash('Signup successful! Please login.', 'success')
-            return redirect(url_for('login'))
-        
-        #If adding the new user fails
-        except Exception as e:
-            
-            #Rollback the session and flash corresponding error
-            db.session.rollback() 
-            if isinstance(e.orig, sqlite3.IntegrityError):
-                
-                if "UNIQUE constraint failed: user.username" in str(e.orig):
-                    flash('Username already exists. Please choose a different one.', 'danger')
-                    
-                elif "UNIQUE constraint failed: user.address" in str(e.orig):
-                    flash('Only one account per public key!', 'danger')
-                    
-                else:
-                    flash('An error occurred during signup. Please try again.', 'danger')
-            else:
-                flash('An error occurred during signup. Please try again.', 'danger')
 
-    #Upon a get request just render the html page
+            # Send verification email
+            send_verification_email(email)
+            
+            flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
+            return redirect(url_for('login'))
+        except FileExistsError:
+            db.session.rollback()
+            flash('An error occurred during signup. Please try again.', 'danger')
+    
     return render_template('signup.html')
+
+@app.route('/verify_email/<token>')
+def verify_email(token):
+    try:
+        email = confirm_verification_token(token)
+    except:
+        flash('The verification link is invalid or has expired.', 'danger')
+        return redirect(url_for('login'))
+    
+    user = User.query.filter_by(email=email).first_or_404()
+    if user.email_verified:
+        flash('Account already verified. Please login.', 'success')
+    else:
+        user.email_verified = True
+        db.session.commit()
+        flash('Your account has been verified! You can now log in.', 'success')
+    
+    return redirect(url_for('login'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Login method logs the user in
-
-    Returns:
-        html page: Either home or login page
-    """
-    
-    #if user ha filled out the form
     if request.method == 'POST':
-        
-        #Get form data and try to retrieve user
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        
-        #if this worked and the password is valid log user in
+
         if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash('Login successful!', 'success')
-            return redirect(url_for('index'))
-    
-        #otherwise display an error
+            if user.email_verified:
+                login_user(user)
+                flash('Login successful!', 'success')
+                return redirect(url_for('index'))
+            else:
+                flash('Please verify your email before logging in.', 'danger')
         else:
             flash('Invalid username or password. Please try again.', 'danger')
-            
-    #If its a simple get request just render the login page
+
     return render_template('login.html')
+
 
 @app.route('/logout')
 @login_required
@@ -358,7 +412,7 @@ def display_address(primain_name):
     #if found
     if primain:
         
-        data=f"Primain name: {primain_name}\nPrimain Addresses: {primain.address}\nBlockchain Networks: {primain.chain}\nUser Proofs: {primain.proof} \nBackend Signatures: {primain.signature} \nPublic Keys: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys()[1])}\nStructure of signed string that was signed: primain_name+primain.address+primain.chain+primain.proof"
+        data=f"Primain name: {primain_name}\nPrimain Addresses: {primain.address}\nBlockchain Networks: {primain.chain}\nUser Proofs: {primain.proof} \nBackend Signatures: {primain.signature} \nPublic Key: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys()[1])}\nStructure of signed string that was signed: primain_name+primain.address+primain.chain+primain.proof"
         # Render the template with the address and the primain name
         return render_template('display_address.html', address=json.loads(primain.address), primain_name=primain_name,network=json.loads(primain.chain), data=data, error=None)
     
