@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "bitcoinjs-lib": "^7.0.0-rc.0",
+    "bitcoinjs-message": "^2.2.0"
+  }
+}

@@ -48,6 +48,9 @@
 </main>
 
 <script src="https://js.stripe.com/v3/"></script> <!-- Include Stripe.js -->
+<script src="https://unpkg.com/@solana/web3.js/dist/web3.min.js"></script>
+<script src="https://unpkg.com/@walletconnect/client/dist/umd/index.min.js"></script>
+
 <script>
     const networks = [
         { id: '1', name: 'Ethereum', logo: 'static/ethereum-eth-logo.png' },
@@ -92,12 +95,13 @@
         { id: 'QNT', name: 'Quant', logo: 'static/quant-qnt-logo.png' },
     ];
 
+    const eth_chains = ['1', 'Dogecoin', '6', 'tether', '1001', '0xShiba', '0xDAI', '0xLEO', 'Un0xUniswap', '461', '500', 'QNT'];
+
     document.addEventListener("DOMContentLoaded", function() {
         const customOptionsContainer = document.querySelector('.custom-options');
         const selectElement = document.getElementById('chain');
 
         networks.forEach(network => {
-            // Create custom option
             const option = document.createElement('span');
             option.className = 'custom-option network-option';
             option.setAttribute('data-value', network.id);
@@ -105,74 +109,136 @@
             option.innerHTML = `<img src="${network.logo}" alt="${network.name}"> ${network.name}`;
             customOptionsContainer.appendChild(option);
 
-            // Create hidden select option
             const selectOption = document.createElement('option');
             selectOption.value = network.id;
             selectOption.textContent = network.name;
             selectElement.appendChild(selectOption);
         });
 
-        document.getElementById("import-address").addEventListener("click", function() {
-            if (typeof window.ethereum !== 'undefined') {
-                ethereum.request({ method: 'eth_requestAccounts' })
-                .then(function(accounts) {
+        document.getElementById("import-address").addEventListener("click", async function() {
+            // Get the selected chain value
+            const selectedChainValue = document.getElementById("chain").value;
+        
+            // Check for Ethereum provider
+            if (typeof window.ethereum !== 'undefined' && selectedChainValue !== '101' && selectedChainValue !== '0'  && selectedChainValue !== '3') { // Assuming '1' is for Ethereum
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
                     document.getElementById("address").value = accounts[0];
-                    alert("Address imported: " + accounts[0]);
-                })
-                .catch(function(error) {
-                    alert("Error requesting accounts: " + error.message);
-                });
-            } else {
-                alert("Wallet is not available. Please install a Wallet to import the address.");
+                    alert("Ethereum address imported: " + accounts[0]);
+                } catch (error) {
+                    alert("Error requesting Ethereum accounts: " + error.message);
+                }
+            } 
+            // Check for Solana provider
+            else if (typeof window.solana !== 'undefined' && selectedChainValue === '101') { // Assuming '101' is for Solana
+                try {
+                    const response = await window.solana.connect();
+                    document.getElementById("address").value = response.publicKey.toString();
+                    alert("Solana address imported: " + response.publicKey.toString());
+                } catch (error) {
+                    alert("Error requesting Solana account: " + error.message);
+                }
+            } 
+            // Check for Solana provider
+            else if (selectedChainValue === '3') { 
+            try {
+                const okxwalletCardanoApi = await window.okxwallet.cardano.enable();
+                const utxos = await okxwalletCardanoApi.getUsedAddresses();
+                document.getElementById("address").value = utxos
+                alert("Cardano address imported: " + utxos);
+            } catch (error) {
+                alert("Error requesting Solana account: " + error.message);
+            }
+            } 
+            else if (typeof window.okxwallet !== 'undefined' && selectedChainValue === '0'){
+                const result = await okxwallet.bitcoin.connect();
+                console.log(result["publicKey"]);
+                document.getElementById("address").value = result["address"];
+                console.log(result["publicKey"]);
+                alert("Btc wallet imported: " + result["address"]);
+            }
+            
+            else {
+                console.log(selectedChainValue)
+                alert("No wallet available. Please install a wallet to import the address.");
             }
         });
 
-        document.getElementById("sign-proof").addEventListener("click", function() {
+        
+        document.getElementById("sign-proof").addEventListener("click", async function () {
             var primainName = document.getElementById("primain_name").value;
             var address = document.getElementById("address").value;
             var selectedChainValue = document.getElementById("chain").value;
             var selectedChainName = document.querySelector(`.custom-option[data-value="${selectedChainValue}"]`).getAttribute("data-name");
             var message = primainName + selectedChainName + address;
 
-            if (typeof window.ethereum !== 'undefined') {
-                ethereum.request({ method: 'eth_requestAccounts' })
-                .then(function(accounts) {
-                    if (document.getElementById("disable-network-check").checked) {
-                        signMessage(message, selectedChainName);
-                    } else {
-                        ethereum.request({ method: 'net_version' })
-                        .then(function(currentChain) {
-                            if (currentChain === selectedChainValue) {
-                                signMessage(message, selectedChainName);
-                            } else {
-                                alert("Please switch to the correct network in your wallet of choice.");
-                            }
-                        })
-                        .catch(function(error) {
-                            alert("Error fetching network ID: " + error.message);
-                        });
+            if (selectedChainValue === '101') {
+                // Solana Signing Flow
+                if (typeof window.solana !== 'undefined') {
+                    try {
+                        const { publicKey } = await window.solana.connect();
+                        const encodedMessage = new TextEncoder().encode(message);
+                        const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+
+                        document.getElementById("proof").value = signature.signature.toString('hex');
+                        document.getElementById("proof_display").value = signature.signature.toString('hex');
+                        document.getElementById("chain_string").value = selectedChainName;
+                        document.getElementById("signed_data").value = message;
+                        alert("Solana signature generated: " + signature.signature.toString('hex'));
+                    } catch (error) {
+                        alert("Error signing message with Solana: " + error.message);
                     }
-                })
-                .catch(function(error) {
+                } else {
+                    alert("Solana wallet not available. Please install a Solana wallet (like Phantom).");
+                }
+            }
+            if (selectedChainValue === '0'&& typeof window.okxwallet !== 'undefined') {
+                
+                try{
+                    const signature = await window.okxwallet.bitcoin.signMessage(message, 'ecdsa')
+                    document.getElementById("proof").value = signature.toString('hex');
+                    document.getElementById("proof_display").value = signature.toString('hex');
+                    document.getElementById("chain_string").value = selectedChainName;
+                    document.getElementById("signed_data").value = message;
+                } catch (error) {
+                    alert("Error signing message with BTC: " + error.message)
+                }
+                
+            }
+             else if (typeof window.ethereum !== 'undefined') {
+                // Ethereum Signing Flow
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    if (document.getElementById("disable-network-check").checked) {
+                        signMessageEthereum(message, selectedChainName);
+                    } else {
+                        const currentChain = await ethereum.request({ method: 'net_version' });
+                        if (currentChain === selectedChainValue || (eth_chains.includes(currentChain) && eth_chains.includes(selectedChainValue))) {
+                            signMessageEthereum(message, selectedChainName);
+                        } else {
+                            alert("Please switch to the correct network in your wallet of choice.");
+                        }
+                    }
+                } catch (error) {
                     alert("Error requesting accounts: " + error.message);
-                });
+                }
             } else {
                 alert("Wallet is not available. Please install a wallet to sign messages.");
             }
         });
 
-        function signMessage(message, chainName) {
+        function signMessageEthereum(message, chainName) {
             ethereum.request({
                 method: 'personal_sign',
                 params: [message, ethereum.selectedAddress],
-            }).then(function(result) {
+            }).then(function (result) {
                 document.getElementById("proof").value = result;
                 document.getElementById("proof_display").value = result;
                 document.getElementById("chain_string").value = chainName;
                 document.getElementById("signed_data").value = message;
-                alert("Signature generated: " + result);
-            }).catch(function(error) {
-                alert("Error signing message: " + error.message);
+                alert("Ethereum signature generated: " + result);
+            }).catch(function (error) {
+                alert("Error signing message with Ethereum: " + error.message);
             });
         }
 

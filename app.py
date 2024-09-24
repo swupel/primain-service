@@ -1,6 +1,6 @@
-#Manage partial imports
+# Manage partial imports
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
-from flask_login import login_required, current_user,login_user,LoginManager,UserMixin,logout_user
+from flask_login import login_required, current_user, login_user, LoginManager, UserMixin, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
@@ -9,14 +9,13 @@ from functools import wraps
 from dotenv import load_dotenv
 from flask_mail import Mail, Message
 
-
-#Manage full imports
+# Manage full imports
 import crypto_methods
 import json
 import stripe
 import os
 
-#Configure flask app
+# Configure Flask app
 app = Flask("Swupel Primain Service")
 app.config['SECRET_KEY'] = crypto_methods.PASSWORD
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -25,20 +24,38 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 def generate_verification_token(email):
+    """Generates a verification token for a given email.
+
+    Args:
+        email (str): The email address to generate a token for.
+
+    Returns:
+        str: The generated token.
+    """
     return s.dumps(email, salt=app.config['SECRET_KEY'])
 
 def confirm_verification_token(token, expiration=3600):
+    """Confirms a verification token.
+
+    Args:
+        token (str): The token to confirm.
+        expiration (int): The expiration time in seconds.
+
+    Returns:
+        str or bool: The email if valid, False otherwise.
+    """
     try:
         email = s.loads(token, salt=app.config['SECRET_KEY'], max_age=expiration)
     except:
         return False
     return email
 
-#Configure database and login manager
+# Configure database and login manager
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+# Load environment variables
 load_dotenv()
 
 # Mail configuration
@@ -52,27 +69,19 @@ app.config['MAIL_DEFAULT_SENDER'] = "info@swupelpms.com"  # Default sender
 
 mail = Mail(app)
 
-SUCCESSES={}
-
-# Generate a serializer object with the app's secret key
-s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
-def generate_verification_token(email):
-    return s.dumps(email, salt=app.config['SECRET_KEY'])
-
-def confirm_verification_token(token, expiration=3600):
-    try:
-        email = s.loads(token, salt=app.config['SECRET_KEY'], max_age=expiration)
-    except:
-        return False
-    return email
+# Store successes
+SUCCESSES = {}
 
 def send_verification_email(user_email):
-    
+    """Sends a verification email to the user.
+
+    Args:
+        user_email (str): The email address of the user.
+    """
     token = generate_verification_token(user_email)
     verify_url = url_for('verify_email', token=token, _external=True)  # Generate verification URL
     
-# Create the email message
+    # Create the email message
     msg = Message(
         'Confirm Your Email',  # Subject of the email
         recipients=[user_email],  # Recipient email
@@ -101,40 +110,51 @@ def send_verification_email(user_email):
     
     # Send the email
     mail.send(msg)
-    
+
 class User(UserMixin, db.Model):
+    """User model to represent registered users.
+
+    Attributes:
+        id (int): Primary DB key.
+        username (str): Unique username of the user.
+        email (str): Unique email of the user.
+        password (str): Hashed password of the user.
+        email_verified (bool): Status of email verification.
+        primains (relationship): Relationship with Primain model.
+    """
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)  # Add email field
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    email_verified = db.Column(db.Boolean, default=False)  # Email verification status
+    email_verified = db.Column(db.Boolean, default=False)
     primains = relationship('Primain', backref='owner', lazy=True)
 
-
 class Primain(db.Model):
-    """Primain class used to hold data of all registered Primains
+    """Primain model to hold data of all registered Primains.
 
-    Args:
-        db (Class): Current database model
-        
     Attributes:
-        id: Primary DB key
-        primain_name: Costum unique name of the primain (is also what gets displayed)
-        address: Cryptographic address linked to the primain
-        chain: Chain on which the address is active
-        proof: Signature which proofs ownership over this primain
-        user_id: Id of the user which owns the primain
+        id (int): Primary DB key.
+        primain_name (str): Custom unique name of the primain.
+        address (str): Cryptographic address linked to the primain.
+        chain (str): Chain on which the address is active.
+        proof (str): Signature proving ownership over this primain.
+        user_id (int): ID of the user who owns the primain.
     """
     id = db.Column(db.Integer, primary_key=True)
     primain_name = db.Column(db.String(100), unique=True, nullable=False)
     address = db.Column(db.String(100), nullable=False)
-    chain =  db.Column(db.String(100), nullable=False)
+    chain = db.Column(db.String(100), nullable=False)
     proof = db.Column(db.String(100), nullable=False)
     signature = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 def send_password_reset_email(user_email):
-    token = generate_verification_token(user_email)  # Reuse the existing token generation
+    """Sends a password reset email to the user.
+
+    Args:
+        user_email (str): The email address of the user.
+    """
+    token = generate_verification_token(user_email)
     reset_url = url_for('reset_with_token', token=token, _external=True)
 
     msg = Message(
@@ -153,6 +173,14 @@ def send_password_reset_email(user_email):
 
 @app.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
+    """Resets the password using the token provided.
+
+    Args:
+        token (str): The token for password reset.
+
+    Returns:
+        html page: Renders the reset password template or redirects to login.
+    """
     email = confirm_verification_token(token)
     if email is False:
         flash('The reset link is invalid or has expired.', 'danger')
@@ -169,9 +197,13 @@ def reset_with_token(token):
 
     return render_template('reset_with_token.html')
 
-
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_password():
+    """Handles password reset request.
+
+    Returns:
+        html page: Renders the reset password template.
+    """
     if request.method == 'POST':
         email = request.form['email']
         user = User.query.filter_by(email=email).first()
@@ -182,32 +214,29 @@ def reset_password():
             flash('Email address not found.', 'danger')
     return render_template('reset_password.html')
 
-
 @login_manager.user_loader
 def load_user(user_id):
-    """Loads the database entry for the current user
+    """Loads the database entry for the current user.
 
     Args:
-        user_id (int): The ID of the current user
+        user_id (int): The ID of the current user.
 
     Returns:
-        User: User object
+        User: The User object.
     """
     return db.session.get(User, int(user_id))
 
 def login_required(f):
-    """Decorator function to decorate all routings where login is mandatory
+    """Decorator function to ensure user is logged in.
 
     Args:
-        f (function): function which is decorated with this method
+        f (function): The function to decorate.
 
     Returns:
-        function: The decorator function
+        function: The decorated function.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        
-        #If the user is not authenticated log out the user
         if not current_user.is_authenticated:
             flash('You need to be logged in to view this page.', 'warning')
             return redirect(url_for('login'))
@@ -217,19 +246,24 @@ def login_required(f):
 @app.route('/home')
 @login_required
 def index():
-    """Displays the home page
+    """Displays the home page.
 
     Returns:
-        html page: The index/home page
+        html page: The index/home page.
     """
     return render_template('index.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """Handles user signup.
+
+    Returns:
+        html page: Renders the signup template.
+    """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        email = request.form['email']  # Add email input field in the form
+        email = request.form['email']
         
         hashed_password = generate_password_hash(password, method='scrypt')
         new_user = User(username=username, password=hashed_password, email=email, email_verified=False)
@@ -243,7 +277,7 @@ def signup():
             
             flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
             return redirect(url_for('login'))
-        except FileExistsError:
+        except Exception as e:
             db.session.rollback()
             flash('An error occurred during signup. Please try again.', 'danger')
     
@@ -251,6 +285,14 @@ def signup():
 
 @app.route('/verify_email/<token>')
 def verify_email(token):
+    """Verifies the user's email.
+
+    Args:
+        token (str): The verification token.
+
+    Returns:
+        html page: Redirects to login page after verification.
+    """
     try:
         email = confirm_verification_token(token)
     except:
@@ -267,9 +309,13 @@ def verify_email(token):
     
     return redirect(url_for('login'))
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles user login.
+
+    Returns:
+        html page: Renders the login template.
+    """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -287,190 +333,246 @@ def login():
 
     return render_template('login.html')
 
-
 @app.route('/logout')
 @login_required
 def logout():
     """Logs out the current user.
 
     Returns:
-        html page: Redirects to landing page
+        html page: Redirects to landing page.
     """
-    
-    # Use Flask-Login's logout_user function to log out
     logout_user()
     flash('You have been logged out.', 'info')
-    
-    return redirect('/') # Redirect to login page or home
+    return redirect('/')  # Redirect to login page or home
 
 @app.route('/success', methods=['GET'])
 @login_required
-def sucess():
-    #try adding the new Primain to the database
-    if SUCCESSES[current_user.id]:
-        session_id=SUCCESSES[current_user.id][1].id
+def success():
+    """Handles successful Primain registration.
+
+    Returns:
+        html page: Renders the index page after processing.
+    """
+    # Try adding the new Primain to the database
+    if SUCCESSES.get(current_user.id):
+        session_id = SUCCESSES[current_user.id][1].id
         
         checkout_session = stripe.checkout.Session.retrieve(
-        session_id,
-        expand=['line_items'],
+            session_id,
+            expand=['line_items'],
         )
         
         if checkout_session.payment_status == "paid":
             db.session.add(SUCCESSES[current_user.id][0])
             db.session.commit()
         else:
-            flash('Pyment Failed!', 'danger')
+            flash('Payment Failed!', 'danger')
     else:
         flash('Register Primain!', 'danger')
     
     checkout_session = stripe.checkout.Session.retrieve(
-    session_id,
-    expand=['line_items'],
+        session_id,
+        expand=['line_items'],
     )
     
-    
     del SUCCESSES[current_user.id]
-    #inform user of success
+    
+    # Inform user of success
     flash('Primain registration successful!', 'success')
     return render_template("index.html")
 
+def convert_signature_to_hex(signature_ints):
+    """Convert a list of integers (signature) to a hexadecimal string.
+
+    Args:
+        signature_ints (list): A list of 64 integers (0-255).
+
+    Returns:
+        str: Hexadecimal representation of the signature, or None if invalid.
+    """
+    # Check if the input is a list of 64 integers
+    if isinstance(signature_ints, list) and len(signature_ints) == 64:
+        if all(isinstance(i, int) and 0 <= i <= 255 for i in signature_ints):
+            # Convert to bytes
+            signature_bytes = bytes(signature_ints)
+            # Convert to hexadecimal
+            return signature_bytes.hex()
+    return None  # Return None if invalid format
 
 @app.route('/register_primain', methods=['GET', 'POST'])
 @login_required
 def register_primain():
-    """Registers a new primain to the database
+    """Registers a new Primain to the database.
 
     Returns:
-        html page: Either home or register_primain
+        html page: Either home or register_primain.
     """
-    
-    #If user has submitted the form
     if request.method == 'POST':
-        
-        #Retrive data from the form
+        # Retrieve data from the form
         primain_name = request.form['primain_name']
         proof = request.form['proof']
         address = request.form['address']
         chain = request.form['chain_string']
-          
         
-        #Create signature
-        signature=crypto_methods.serialize_signature_to_string(crypto_methods.sign_message(f"{primain_name}{address}{chain}{proof}".encode()))
+        # Create signature
+        signature = crypto_methods.serialize_signature_to_string(
+            crypto_methods.sign_message(f"{primain_name}{address}{chain}{proof}".encode())
+        )
 
-        #create new primain object and build message string 
-        new_primain = Primain(primain_name=primain_name, address=json.dumps([address]), chain=json.dumps([chain]),proof=json.dumps([proof]),signature=json.dumps([signature]), user_id=current_user.id)
+        # Create new Primain object
+        new_primain = Primain(
+            primain_name=primain_name,
+            address=json.dumps([address]),
+            chain=json.dumps([chain]),
+            proof=json.dumps([proof]),
+            signature=json.dumps([signature]),
+            user_id=current_user.id
+        )
         message = f"{primain_name}{chain}{address}"
         
-        SUCCESSES[current_user.id]=[new_primain,""]
+        SUCCESSES[current_user.id] = [new_primain, ""]
         primain = Primain.query.filter_by(primain_name=primain_name).first()
+        
         try:
+            if chain != "Solana" and chain != "Bitcoin":
+                valid = crypto_methods.verify_signature(proof, message, address)
             
-            #verify if user actually owns the address
-            valid = crypto_methods.verify_signature(proof, message, address)
-            
-            #if thats the case
-            if valid:
+            if chain == "Bitcoin":
                 
+                if len(request.form['address']) == 34:
+                    valid = crypto_methods.verify_bitcoin_signature(request.form['address'],request.form['proof'],message)
+                else:
+                    flash('Only Legacy Adress Format Accepted Currently!', 'danger')
+                    return redirect(url_for('register_primain'))
+            else:
+                try:
+                    signature_list=[int(x) for x in proof.split(",")]
+                    proof=convert_signature_to_hex(signature_list)
+                    
+                    if not proof:
+                        flash('Signature is invalid!', 'danger')
+                        return redirect(url_for('register_primain'))
+                    
+                    valid = crypto_methods.verify_solana_signature(proof,message,address)
+                except:
+                    valid = crypto_methods.verify_solana_signature(proof,message,address)
+                    
+            
+            if valid:
                 if not primain:
-                    #check if user has exceeded max amount of primains
+                    # Check if user has exceeded max amount of Primains
                     if len(current_user.primains) >= 3:
-                        
-                        #inform user if that is the case
-                        flash('You can only own a maximum of 3 primains.', 'danger')
+                        flash('You can only own a maximum of 3 Primains.', 'danger')
                         return redirect(url_for('register_primain'))
 
-                    
                     stripe.api_key = os.getenv('stripe_key')
 
                     session = stripe.checkout.Session.create(
-                    line_items=[{
-                    'price_data': {
-                        'currency': 'eur',
-                        'product_data': {
-                        'name': f'Purchase the {primain_name} Primain',
-                        },
-                        'unit_amount': 2000,
-                    },
-                    'quantity': 1,
-                    }],
-                    mode='payment',
-                    success_url=f'http://localhost:5000/success',
-                    cancel_url='http://localhost:5000/register_primain')
+                        line_items=[{
+                            'price_data': {
+                                'currency': 'eur',
+                                'product_data': {
+                                    'name': f'Purchase the {primain_name} Primain',
+                                },
+                                'unit_amount': 2000,
+                            },
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url='http://localhost:5000/success',
+                        cancel_url='http://localhost:5000/register_primain'
+                    )
 
-                    SUCCESSES[current_user.id]=[new_primain,session]
+                    SUCCESSES[current_user.id] = [new_primain, session]
                     return redirect(session.url, code=303)
-            
                 else:
-
                     db.session.rollback()
-                    
+
                     if primain.user_id != current_user.id:
                         flash('You are not the Owner of this Primain!', 'danger')
                     elif proof in json.loads(primain.proof):
                         flash('You have already added this Address to your Primain!', 'danger')
                     else:
-                        
                         try:
-
-                            new_address=json.loads(primain.address)
+                            # Update existing Primain with new data
+                            new_address = json.loads(primain.address)
                             new_address.append(address)
-                            primain.address=json.dumps(new_address)
-                            
-                            new_chain=json.loads(primain.chain)
+                            primain.address = json.dumps(new_address)
+
+                            new_chain = json.loads(primain.chain)
                             new_chain.append(chain)
-                            primain.chain=json.dumps(new_chain)
-                            
-                            new_proof=json.loads(primain.proof)
+                            primain.chain = json.dumps(new_chain)
+
+                            new_proof = json.loads(primain.proof)
                             new_proof.append(proof)
-                            primain.proof=json.dumps(new_proof)
-                            
-                            new_signature=json.loads(primain.signature)
+                            primain.proof = json.dumps(new_proof)
+
+                            new_signature = json.loads(primain.signature)
                             new_signature.append(signature)
-                            primain.signature=json.dumps(new_signature)
-                            
-                            #try adding the new Primain to the database
+                            primain.signature = json.dumps(new_signature)
+
+                            # Commit changes to the database
                             db.session.commit()
-                            #inform user of success
                             flash('Primain registration successful!', 'success')
                             return redirect(url_for('index'))
 
                         except:
-                            flash("An error occured!", 'danger')
-                    
+                            flash("An error occurred!", 'danger')
             else:
-                flash('Data is invalid, Check connected Network!', 'danger')
-        except:
+                flash('Data is invalid, check connected network!', 'danger')
+        except FileNotFoundError:
             flash('Data is invalid!', 'danger')
-    
-    #if its just a get request just display the page
+
+    # If it's just a GET request, display the page
     return render_template('register_primain.html')
+
 
 @app.route('/<primain_name>')
 def display_address(primain_name):
-    """Display the address of the inputted primain name
+    """Display the address of the inputted Primain name.
 
     Args:
-        primain_name (string): Name of the primain for which to find the address
+        primain_name (str): Name of the Primain for which to find the address.
 
     Returns:
-        html page: Html page filled with either address data or an error
+        html page: Html page filled with either address data or an error.
     """
-    # Query the database to find the primain with the given name
+    # Query the database to find the Primain with the given name
     primain = Primain.query.filter_by(primain_name=primain_name).first()
     
-    #if found
     if primain:
-        
-        data=f"Primain name: {primain_name}\nPrimain Addresses: {primain.address}\nBlockchain Networks: {primain.chain}\nUser Proofs: {primain.proof} \nBackend Signatures: {primain.signature} \nPublic Key: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys()[1])}\nStructure of signed string that was signed: primain_name+primain.address+primain.chain+primain.proof"
-        # Render the template with the address and the primain name
-        return render_template('display_address.html', address=json.loads(primain.address), primain_name=primain_name,network=json.loads(primain.chain), data=data, error=None)
-    
+        data = (
+            f"Primain name: {primain_name}\n"
+            f"Primain Addresses: {primain.address}\n"
+            f"Blockchain Networks: {primain.chain}\n"
+            f"User Proofs: {primain.proof}\n"
+            f"Backend Signatures: {primain.signature}\n"
+            f"Public Key: {crypto_methods.serialize_public_key_to_string(crypto_methods.load_keys()[1])}\n"
+            f"Structure of signed string that was signed: primain_name + primain.address + primain.chain + primain.proof"
+        )
+        # Render the template with the address and the Primain name
+        return render_template('display_address.html', 
+                               address=json.loads(primain.address), 
+                               primain_name=primain_name,
+                               network=json.loads(primain.chain), 
+                               data=data, 
+                               error=None)
     else:
         # Render the template with an error message
-        return render_template('display_address.html', address=None, primain_name=primain_name, network=None, error='No Addresses linked to this Primain')
+        return render_template('display_address.html', 
+                               address=None, 
+                               primain_name=primain_name, 
+                               network=None, 
+                               error='No Addresses linked to this Primain')
+
 
 @app.route('/', methods=['POST', 'GET'])
 def get_address():
+    """Handles address retrieval based on Primain name.
+
+    Returns:
+        json: Redirect URL or error message.
+    """
     if request.method == 'POST':
         primain_name = request.form['primain_name']
         primain = Primain.query.filter_by(primain_name=primain_name).first()
@@ -478,31 +580,30 @@ def get_address():
             return jsonify({'redirect': url_for('display_address', primain_name=primain_name)})
         else:
             return jsonify({'error': 'No Primain With This Name was Found!'})
-    
+
     return render_template('get_address.html')
+
 
 @app.route('/view_owned_primains')
 @login_required
 def view_owned_primains():
-    """Returns html page with all owned primains
+    """Returns html page with all owned Primains.
 
     Returns:
-        html page: page filled with owned primains or an error
+        html page: Page filled with owned Primains or an error.
     """
-
-    #If user owns primains display them
+    # If user owns Primains, display them
     if current_user.primains:
         return render_template('view_owned_primains.html', primains=current_user.primains)
-    
-    #otherwise show error
     else:
+        # Otherwise show error
         flash('No Primains found for this user.', 'info')
         return render_template('view_owned_primains.html')
-    
-#Run file if executed directly
+
+
+# Run file if executed directly
 if __name__ == '__main__':
-    
-    #Create/Load database and then run app
+    # Create/Load database and then run app
     with app.app_context():
         db.create_all()
     app.run(debug=True)
