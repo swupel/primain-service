@@ -1,13 +1,13 @@
 # Manage partial imports
-from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import login_required, current_user, login_user, LoginManager, UserMixin, logout_user
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
-from itsdangerous import URLSafeTimedSerializer
-from functools import wraps
-from dotenv import load_dotenv
 from flask_mail import Mail, Message
+from dotenv import load_dotenv
+from functools import wraps
 
 # Manage full imports
 import crypto_methods
@@ -432,19 +432,8 @@ def register_primain():
         
         SUCCESSES[current_user.id] = [new_primain, ""]
         primain = Primain.query.filter_by(primain_name=primain_name).first()
-        
         try:
-            if chain != "Solana" and chain != "Bitcoin":
-                valid = crypto_methods.verify_signature(proof, message, address)
-            
-            if chain == "Bitcoin":
-                
-                if len(request.form['address']) == 34:
-                    valid = crypto_methods.verify_bitcoin_signature(request.form['address'],request.form['proof'],message)
-                else:
-                    flash('Only Legacy Adress Format Accepted Currently!', 'danger')
-                    return redirect(url_for('register_primain'))
-            else:
+            if chain == "Solana" :
                 try:
                     signature_list=[int(x) for x in proof.split(",")]
                     proof=convert_signature_to_hex(signature_list)
@@ -456,15 +445,20 @@ def register_primain():
                     valid = crypto_methods.verify_solana_signature(proof,message,address)
                 except:
                     valid = crypto_methods.verify_solana_signature(proof,message,address)
-                    
             
+            elif chain == "Bitcoin":
+                
+                if len(request.form['address']) == 34:
+                    valid = crypto_methods.verify_bitcoin_signature(request.form['address'],request.form['proof'],message)
+                else:
+                    flash('Only Legacy Adress Format Accepted Currently!', 'danger')
+                    return redirect(url_for('register_primain'))
+                
+            else:
+                 valid = crypto_methods.verify_signature(proof, message, address)
+
             if valid:
                 if not primain:
-                    # Check if user has exceeded max amount of Primains
-                    if len(current_user.primains) >= 3:
-                        flash('You can only own a maximum of 3 Primains.', 'danger')
-                        return redirect(url_for('register_primain'))
-
                     stripe.api_key = os.getenv('stripe_key')
 
                     session = stripe.checkout.Session.create(
@@ -520,7 +514,7 @@ def register_primain():
                             flash("An error occurred!", 'danger')
             else:
                 flash('Data is invalid, check connected network!', 'danger')
-        except FileNotFoundError:
+        except:
             flash('Data is invalid!', 'danger')
 
     # If it's just a GET request, display the page

@@ -11,11 +11,6 @@
             <input type="text" id="primain_name" name="primain_name" placeholder="E.g. dog.tree.water" required>
         </div>
         <div class="field-with-button">
-            <label for="address">Address:</label>
-            <input type="text" id="address" name="address" placeholder="Enter your address" required>
-            <button type="button" id="import-address" class="small-button">Import Address</button>
-        </div>
-        <div class="field-with-button">
             <label for="chain">Blockchain Network:</label>
             <div class="custom-select-wrapper">
                 <div class="custom-select">
@@ -28,6 +23,11 @@
             </div>
             <select id="chain" name="chain" style="display: none;"></select>
             <input type="hidden" id="chain_string" name="chain_string">
+        </div>
+        <div class="field-with-button">
+            <label for="address">Address:</label>
+            <input type="text" id="address" name="address" placeholder="Enter your address" required>
+            <button type="button" id="import-address" class="small-button">Import Address</button>
         </div>
         <div class="field-with-button">
             <label for="proof">Proof:</label>
@@ -67,35 +67,19 @@
         { id: '101', name: 'Solana', logo: 'static/solana-sol-logo.png' },
         { id: 'tether', name: 'Tether', logo: 'static/tether-usdt-logo.png' },
         { id: '6', name: 'USD Coin', logo: 'static/usd-coin-usdc-logo.png' },
-        { id: 'XRP', name: 'XRP', logo: 'static/xrp-xrp-logo.png' },
         { id: 'Dogecoin', name: 'Dogecoin', logo: 'static/dogecoin-doge-logo.png' },
-        { id: 'TRON', name: 'TRON', logo: 'static/tron-trx-logo.png' },
         { id: '1001', name: 'TONCOIN', logo: 'static/toncoin-ton-logo.png' },
-        { id: '3', name: 'Cardano', logo: 'static/cardano-ada-logo.png' },
         { id: '0xShiba', name: 'Shiba INU', logo: 'static/shiba-inu-shib-logo.png' },
-        { id: '145', name: 'Bitcoin Cash', logo: 'static/bitcoin-cash-bch-logo.png' },
-        { id: '1', name: 'Chainlink', logo: 'static/chainlink-link-logo.png' },
-        { id: '354', name: 'Polkadot', logo: 'static/polkadot-new-dot-logo.png' },
+        { id: '1c', name: 'Chainlink', logo: 'static/chainlink-link-logo.png' },
         { id: '0xDAI', name: 'DAI', logo: 'static/multi-collateral-dai-dai-logo.png' },
         { id: '0xLEO', name: 'LEO', logo: 'static/unus-sed-leo-leo-logo.png' },
-        { id: '2', name: 'Litecoin', logo: 'static/litecoin-ltc-logo.png' },
-        { id: '245', name: 'NEAR', logo: 'static/near-protocol-near-logo.png' },
         { id: '0xUniswap', name: 'Uniswap', logo: 'static/uniswap-uni-logo.png' },
-        { id: '128', name: 'Monero', logo: 'static/monero-xmr-logo.png' },
-        { id: '61', name: 'Ethereum Classic', logo: 'static/ethereum-classic-etc-logo.png' },
         { id: '461', name: 'Filecoin', logo: 'static/filecoin-fil-logo.png' },
-        { id: '0xHedera', name: 'Hedera', logo: 'static/hedera-hbar-logo.png' },
-        { id: '394', name: 'Cosmos', logo: 'static/cosmos-atom-logo.png' },
-        { id: '123', name: 'Arweave', logo: 'static/arweave-ar-logo.png' },
-        { id: '65535', name: 'Helium', logo: 'static/helium-hnt-logo.png' },
         { id: '500', name: 'Theta', logo: 'static/theta-network-theta-logo.png' },
-        { id: '60', name: 'EOS', logo: 'static/eos-eos-logo.png' },
-        { id: '89', name: 'NEO', logo: 'static/neo-neo-logo.png' },
-        { id: '133', name: 'Zcash', logo: 'static/zcash-zec-logo.png' },
         { id: 'QNT', name: 'Quant', logo: 'static/quant-qnt-logo.png' },
     ];
 
-    const eth_chains = ['1', 'Dogecoin', '6', 'tether', '1001', '0xShiba', '0xDAI', '0xLEO', 'Un0xUniswap', '461', '500', 'QNT'];
+    const eth_chains = ['1','1c', 'Dogecoin', '6', 'tether', '1001', '0xShiba', '0xDAI', '0xLEO', 'Un0xUniswap', '461', '500', 'QNT','56'];
 
     document.addEventListener("DOMContentLoaded", function() {
         const customOptionsContainer = document.querySelector('.custom-options');
@@ -119,18 +103,9 @@
             // Get the selected chain value
             const selectedChainValue = document.getElementById("chain").value;
         
-            // Check for Ethereum provider
-            if (typeof window.ethereum !== 'undefined' && selectedChainValue !== '101' && selectedChainValue !== '0'  && selectedChainValue !== '3') { // Assuming '1' is for Ethereum
-                try {
-                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                    document.getElementById("address").value = accounts[0];
-                    alert("Ethereum address imported: " + accounts[0]);
-                } catch (error) {
-                    alert("Error requesting Ethereum accounts: " + error.message);
-                }
-            } 
+
             // Check for Solana provider
-            else if (typeof window.solana !== 'undefined' && selectedChainValue === '101') { // Assuming '101' is for Solana
+            if (typeof window.solana !== 'undefined' && selectedChainValue === '101') { // Assuming '101' is for Solana
                 try {
                     const response = await window.solana.connect();
                     document.getElementById("address").value = response.publicKey.toString();
@@ -140,16 +115,6 @@
                 }
             } 
             // Check for Solana provider
-            else if (selectedChainValue === '3') { 
-            try {
-                const okxwalletCardanoApi = await window.okxwallet.cardano.enable();
-                const utxos = await okxwalletCardanoApi.getUsedAddresses();
-                document.getElementById("address").value = utxos
-                alert("Cardano address imported: " + utxos);
-            } catch (error) {
-                alert("Error requesting Solana account: " + error.message);
-            }
-            } 
             else if (typeof window.okxwallet !== 'undefined' && selectedChainValue === '0'){
                 const result = await okxwallet.bitcoin.connect();
                 console.log(result["publicKey"]);
@@ -157,6 +122,16 @@
                 console.log(result["publicKey"]);
                 alert("Btc wallet imported: " + result["address"]);
             }
+            // Check for Ethereum provider
+            else if (typeof window.ethereum !== 'undefined') { // Assuming '1' is for Ethereum
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                document.getElementById("address").value = accounts[0];
+                alert("Address imported: " + accounts[0]);
+            } catch (error) {
+                alert("Error requesting account: " + error.message);
+            }
+            } 
             
             else {
                 console.log(selectedChainValue)
@@ -192,7 +167,7 @@
                     alert("Solana wallet not available. Please install a Solana wallet (like Phantom).");
                 }
             }
-            if (selectedChainValue === '0'&& typeof window.okxwallet !== 'undefined') {
+            else if (selectedChainValue === '0'&& typeof window.okxwallet !== 'undefined') {
                 
                 try{
                     const signature = await window.okxwallet.bitcoin.signMessage(message, 'ecdsa')
@@ -205,6 +180,7 @@
                 }
                 
             }
+            
              else if (typeof window.ethereum !== 'undefined') {
                 // Ethereum Signing Flow
                 try {
@@ -212,7 +188,10 @@
                     if (document.getElementById("disable-network-check").checked) {
                         signMessageEthereum(message, selectedChainName);
                     } else {
+                        
                         const currentChain = await ethereum.request({ method: 'net_version' });
+                        console.log(currentChain,selectedChainValue)
+                        console.log(eth_chains.includes(selectedChainValue))
                         if (currentChain === selectedChainValue || (eth_chains.includes(currentChain) && eth_chains.includes(selectedChainValue))) {
                             signMessageEthereum(message, selectedChainName);
                         } else {

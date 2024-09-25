@@ -7,29 +7,20 @@ from dotenv import load_dotenv
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.backends import default_backend
-from cryptography.exceptions import InvalidSignature
-from nacl.signing import VerifyKey
 from nacl.exceptions import BadSignatureError
-import base64
 from nacl.signing import VerifyKey
-from nacl.exceptions import BadSignatureError
 
-import base58
-import binascii
-from nacl.signing import VerifyKey
-from nacl.exceptions import BadSignatureError
-import base64
-import base58
-import hashlib
-import base64
-import os
-import hashlib
-import ecdsa
-import base58
-import bech32
-import binascii
+
+#Full imports
 import subprocess
+import binascii
+import hashlib
+import base64
+import base58
 import json
+import os
+
+
 
 load_dotenv()
 
@@ -87,7 +78,6 @@ def verify_signature(signature, message, address):
     """
     # Encode the message
     
-    print(signature,message,address)
     message_encoded = encode_defunct(text=message)
 
     # Recover the address
@@ -235,3 +225,4 @@ def verify_bitcoin_signature(address, signature, message):
     except subprocess.CalledProcessError as e:
         print(f"Error: {e.stderr}")
         return None
+
