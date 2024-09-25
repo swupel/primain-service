@@ -520,6 +520,22 @@ def register_primain():
     # If it's just a GET request, display the page
     return render_template('register_primain.html')
 
+@app.route('/check_primain_availability')
+def check_primain_availability():
+    """Check if the Primain name is available."""
+    primain_name = request.args.get('primain_name')
+
+    if primain_name:
+        # Check if the Primain already exists in the database
+        primain = Primain.query.filter_by(primain_name=primain_name).first()
+
+        if primain:
+            return jsonify({'available': False})  # Not available
+        else:
+            return jsonify({'available': True})  # Available
+    else:
+        return jsonify({'available': False})  # Invalid input
+
 
 @app.route('/<primain_name>')
 def display_address(primain_name):

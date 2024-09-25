@@ -9,6 +9,7 @@
         <div>
             <label for="primain_name">Desired Primain:</label>
             <input type="text" id="primain_name" name="primain_name" placeholder="E.g. dog.tree.water" required>
+            <span id="primain-status"></span> <!-- This will show checkmark or cross -->
         </div>
         <div class="field-with-button">
             <label for="chain">Blockchain Network:</label>
@@ -244,5 +245,27 @@
             }
         });
     })
+    document.getElementById('primain_name').addEventListener('input', function() {
+        const primainName = this.value;
+    
+        // Send AJAX request to check availability
+        if (primainName) {
+            fetch(`/check_primain_availability?primain_name=${encodeURIComponent(primainName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const statusElement = document.getElementById('primain-status');
+                    if (data.available) {
+                        statusElement.innerHTML = '<span style="color: green;">✔️</span>'; // Available
+                    } else {
+                        statusElement.innerHTML = '<span style="color: red;">❌</span>'; // Not available
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking Primain availability:', error);
+                });
+        } else {
+            document.getElementById('primain-status').innerHTML = ''; // Clear status if input is empty
+        }
+    });
 </script>
 {% endblock %}
