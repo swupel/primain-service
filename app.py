@@ -253,6 +253,125 @@ def index():
     """
     return render_template('index.html')
 
+
+@app.route('/add_primain<primain_n>',methods=['GET', 'POST'])
+@login_required
+def add_primain(primain_n):
+
+    if request.method == 'POST':
+        # Retrieve data from the form
+        primain_name = request.form['primain_name']
+        proof = request.form['proof']
+        address = request.form['address']
+        chain = request.form['chain_string']
+        
+        # Create signature
+        signature = crypto_methods.serialize_signature_to_string(
+            crypto_methods.sign_message(f"{primain_name}{address}{chain}{proof}".encode())
+        )
+
+        # Create new Primain object
+        new_primain = Primain(
+            primain_name=primain_name,
+            address=json.dumps([address]),
+            chain=json.dumps([chain]),
+            proof=json.dumps([proof]),
+            signature=json.dumps([signature]),
+            user_id=current_user.id
+        )
+        message = f"{primain_name}{chain}{address}"
+        
+        SUCCESSES[current_user.id] = [new_primain, ""]
+        primain = Primain.query.filter_by(primain_name=primain_name).first()
+        try:
+            if chain == "Solana" :
+                try:
+                    signature_list=[int(x) for x in proof.split(",")]
+                    proof=convert_signature_to_hex(signature_list)
+                    
+                    if not proof:
+                        flash('Signature is invalid!', 'danger')
+                        return redirect(url_for('register_primain'))
+                    
+                    valid = crypto_methods.verify_solana_signature(proof,message,address)
+                except:
+                    valid = crypto_methods.verify_solana_signature(proof,message,address)
+            
+            elif chain == "Bitcoin":
+                
+                if len(request.form['address']) == 34:
+                    valid = crypto_methods.verify_bitcoin_signature(request.form['address'],request.form['proof'],message)
+                else:
+                    flash('Only Legacy Adress Format Accepted Currently!', 'danger')
+                    return redirect(url_for('register_primain'))
+                
+            else:
+                 valid = crypto_methods.verify_signature(proof, message, address)
+
+            if valid:
+                if not primain:
+                    stripe.api_key = os.getenv('stripe_key')
+
+                    session = stripe.checkout.Session.create(
+                        line_items=[{
+                            'price_data': {
+                                'currency': 'eur',
+                                'product_data': {
+                                    'name': f'Purchase the {primain_name} Primain',
+                                },
+                                'unit_amount': 2000,
+                            },
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url='http://localhost:5000/success',
+                        cancel_url='http://localhost:5000/register_primain'
+                    )
+
+                    SUCCESSES[current_user.id] = [new_primain, session]
+                    return redirect(session.url, code=303)
+                else:
+                    db.session.rollback()
+
+                    if primain.user_id != current_user.id:
+                        flash('You are not the Owner of this Primain!', 'danger')
+                    elif proof in json.loads(primain.proof):
+                        flash('You have already added this Address to your Primain!', 'danger')
+                    else:
+                        try:
+                            # Update existing Primain with new data
+                            new_address = json.loads(primain.address)
+                            new_address.append(address)
+                            primain.address = json.dumps(new_address)
+
+                            new_chain = json.loads(primain.chain)
+                            new_chain.append(chain)
+                            primain.chain = json.dumps(new_chain)
+
+                            new_proof = json.loads(primain.proof)
+                            new_proof.append(proof)
+                            primain.proof = json.dumps(new_proof)
+
+                            new_signature = json.loads(primain.signature)
+                            new_signature.append(signature)
+                            primain.signature = json.dumps(new_signature)
+
+                            # Commit changes to the database
+                            db.session.commit()
+                            flash('Primain registration successful!', 'success')
+                            return redirect(url_for('index'))
+
+                        except:
+                            flash("An error occurred!", 'danger')
+            else:
+                flash('Data is invalid, check connected network!', 'danger')
+        except:
+            flash('Data is invalid!', 'danger')
+
+    # If it's just a GET request, display the page
+    return render_template('add_primain.html',primain_name=primain_n)
+
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     """Handles user signup.
