@@ -41,23 +41,30 @@
                 ]%}
                 
 
-                <div style="display: flex; flex-direction: column;">
+                <div style="display: flex; flex-direction: column;">  <!-- Initialize a flag to track linked addresses -->
+                
                     {% for net in network %}
                         {% set counter = loop.index0 %}
                         {% for chain in networks %}
                             {% if net == chain.name %}
-                                <div style="margin-bottom: 20px; display: flex; align-items: center;">
-                                    <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
-                                    <span style="font-size: 18px;">{{ address[counter] }}</span>
-                                    <button id="copyAddressButton{{ address[counter] }}" class="button" onclick="copyAddress('{{ address[counter] }}')" style="margin-left: 10px;">Copy Address</button>
-                                </div>
+                                    <div style="margin-bottom: 20px; display: flex; align-items: center;">
+                                        <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
+                                        <span style="font-size: 18px;">{{ address[counter] }}</span>
+                                        <button id="copyAddressButton{{ address[counter] }}" class="button" onclick="copyAddress('{{ address[counter] }}')" style="margin-left: 10px;">Copy Address</button>
+                                    </div> 
                             {% endif %}
                         {% endfor %}
                     {% endfor %}
+                    <span style="font-size: 18px; color: white;">{{ counter }}</span>
                 </div>
+                {%if network==[] %}
+                <span style="font-size: 18px; color: white;">Primain is owned but has no addresses linked.</span>
+                {%endif%}
+                              
                 <div id="verificationData" style="display:none;">{{ data }}</div>
             </div>
         </div>
+
 
     </div>
     <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>

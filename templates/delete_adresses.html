@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ primain_name }} Address{% endblock %}
+{% block content %}
+<header>
+    <h1>Addresses for {{ primain_name }}</h1>
+</header>
+<main>
+    {% if error %}
+    <div id="messageContainer" class="message danger">
+        {{ error }}
+    </div>
+    {% else %}
+    <div id="addressDisplay">
+        <div id="addressBox" style="background-color: #121212; color: #ffffff; border: 1px solid #5af0b9; border-radius: 5px; padding: 15px; margin-bottom: 10px;">
+            <div style="display: flex; flex-direction: column; max-height: 400px; overflow-y: auto;">
+                {% set networks = [
+                    { "id": '1', "name": 'Ethereum', "logo": 'ethereum-eth-logo.png' },
+                    { "id": '137', "name": 'Polygon', "logo": 'polygon-matic-logo.png' },
+                    { "id": '56', "name": 'Binance Smart Chain', "logo": 'bnb-bnb-logo.png' },
+                    { "id": '43114', "name": 'Avalanche', "logo": 'avalanche-avax-logo.png' },
+                    { "id": '250', "name": 'Fantom', "logo": 'fantom-ftm-logo.png' },
+                    { "id": '42161', "name": 'Arbitrum', "logo": 'arbitrum-arb-logo.png' },
+                    { "id": '10', "name": 'Optimism', "logo": 'optimism-ethereum-op-logo.png' },
+                    { "id": '61', "name": 'Harmony', "logo": 'harmony-one-logo.png' },
+                    { "id": '25', "name": 'Cronos', "logo": 'cronos-cro-logo.png' },
+                    { "id": '42220', "name": 'Celo', "logo": 'celo-celo-logo.png' },
+                    { "id": '0', "name": 'Bitcoin', "logo": 'bitcoin-btc-logo.png' },
+                    { "id": '101', "name": 'Solana', "logo": 'solana-sol-logo.png' },
+                    { "id": 'tether', "name": 'Tether', "logo": 'tether-usdt-logo.png' },
+                    { "id": '6', "name": 'USD Coin', "logo": 'usd-coin-usdc-logo.png' },
+                    { "id": 'Dogecoin', "name": 'Dogecoin', "logo": 'dogecoin-doge-logo.png' },
+                    { "id": '1001', "name": 'TONCOIN', "logo": 'toncoin-ton-logo.png' },
+                    { "id": '0xShiba', "name": 'Shiba INU', "logo": 'shiba-inu-shib-logo.png' },
+                    { "id": '1c', "name": 'Chainlink', "logo": 'chainlink-link-logo.png' },
+                    { "id": '0xDAI', "name": 'DAI', "logo": 'multi-collateral-dai-dai-logo.png' },
+                    { "id": '0xLEO', "name": 'LEO', "logo": 'unus-sed-leo-leo-logo.png' },
+                    { "id": '0xUniswap', "name": 'Uniswap', "logo": 'uniswap-uni-logo.png' },
+                    { "id": '461', "name": 'Filecoin', "logo": 'filecoin-fil-logo.png' },
+                    { "id": '500', "name": 'Theta', "logo": 'theta-network-theta-logo.png' },
+                    { "id": 'QNT', "name": 'Quant', "logo": 'quant-qnt-logo.png' }
+                ]%}
+
+                <div style="display: flex; flex-direction: column;">
+                    {% for net in network %}
+                        {% set counter = loop.index0 %}
+                        {% for chain in networks %}
+                            {% if net == chain.name %}
+                                <div style="margin-bottom: 20px; display: flex; align-items: center;">
+                                    <img src="{{ url_for('static', filename=chain.logo) }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
+                                    <span style="font-size: 18px;">{{ address[counter] }}</span>
+                                    <button id="deleteAddressButton{{ address[counter] }}" class="button" onclick="deleteAddress('{{ address[counter] }}', '{{ chain.name }}')" style="margin-left: 10px;">Delete Address</button>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    {%if network==[] %}
+                    <span style="font-size: 18px; color: white;">Primain is owned but has no addresses linked.</span>
+                    {%endif%}
+                                
+                </div>
+                <div id="verificationData" style="display:none;">{{ data }}</div>
+            </div>
+        </div>
+    </div>
+    {%endif%}
+    <a href="/view_owned_primains" class="back-button">Back</a>
+</main>
+
+<script>
+    function copyAddress(address) {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = address;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        alert('Address copied: ' + address);
+    }
+        
+    function deleteAddress(address, chain) {
+        if (confirm(`Are you sure you want to remove the address ${address} on the ${chain} network?`)) {
+            fetch(`/delete_adress{{ primain_name }}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ address: address, chain: chain, primain_name: '{{ primain_name }}' })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`Address deleted: ${address} on the ${chain} network`);
+                    location.reload(); // Refresh the page to reflect the deleted address
+                } else {
+                    response.json().then(data => {
+                        alert('Failed to delete address. Reason: ' + data.error);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting address. Please try again.');
+            });
+        }
+    }
+</script>
+{% endblock %}

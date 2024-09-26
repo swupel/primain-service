@@ -359,7 +359,7 @@ def add_primain(primain_n):
                             # Commit changes to the database
                             db.session.commit()
                             flash('Primain registration successful!', 'success')
-                            return redirect(url_for('index'))
+                            return redirect(url_for('view_owned_primains'))
 
                         except:
                             flash("An error occurred!", 'danger')
@@ -655,6 +655,89 @@ def check_primain_availability():
     else:
         return jsonify({'available': False})  # Invalid input
 
+@app.route('/delete_adress<primain_name>', methods=['DELETE', 'GET'])
+@login_required
+def delete_address(primain_name):
+    """Display the address of the inputted Primain name.
+
+    Args:
+        primain_name (str): Name of the Primain for which to find the address.
+
+    Returns:
+        html page: Html page filled with either address data or an error.
+    """
+    # Query the database to find the Primain with the given name
+    if request.method == 'GET':
+        
+        primain = Primain.query.filter_by(primain_name=primain_name).first()
+        
+        if primain:
+            # Render the template with the address and the Primain name
+            return render_template('delete_adresses.html', 
+                                address=json.loads(primain.address), 
+                                primain_name=primain_name,
+                                network=json.loads(primain.chain), 
+                                error=None)
+        else:
+            # Render the template with an error message
+            return render_template('delete_adresses.html', 
+                                address=None, 
+                                primain_name=primain_name, 
+                                network=None, 
+                                error='No Addresses linked to this Primain')
+    else:
+        try:
+            data = request.get_json()
+            primain_name = data.get('primain_name')
+            address_to_delete = data.get('address')
+            chain_to_delete = data.get('chain')
+            
+            # Fetch the Primain for the current user
+            primain = Primain.query.filter_by(primain_name=primain_name, user_id=current_user.id).first()
+
+            if not primain:
+                return jsonify({'error': 'Primain not found or you do not have permission to delete this address.'}), 404
+            
+            # Load existing addresses, chains, proofs, and signatures
+            existing_addresses = json.loads(primain.address)
+            existing_chains = json.loads(primain.chain)
+            existing_proofs = json.loads(primain.proof)
+            existing_signatures = json.loads(primain.signature)
+
+            # Check if the address and chain combination to delete exists in the Primain
+            if address_to_delete not in existing_addresses or chain_to_delete not in existing_chains:
+                return jsonify({'error': 'Address or Chain not found in this Primain.'}), 404
+
+            # Get the index of the address and chain to delete
+            index_to_delete = None
+            for i in range(len(existing_addresses)):
+                if existing_addresses[i] == address_to_delete and existing_chains[i] == chain_to_delete:
+                    index_to_delete = i
+                    break
+
+            if index_to_delete is None:
+                return jsonify({'error': 'No matching address and chain combination found.'}), 404
+
+            # Remove the corresponding address, chain, proof, and signature
+            del existing_addresses[index_to_delete]
+            del existing_chains[index_to_delete]
+            del existing_proofs[index_to_delete]
+            del existing_signatures[index_to_delete]
+
+            # Update the Primain with the new data
+            primain.address = json.dumps(existing_addresses)
+            primain.chain = json.dumps(existing_chains)
+            primain.proof = json.dumps(existing_proofs)
+            primain.signature = json.dumps(existing_signatures)
+
+            # Commit the changes to the database
+            db.session.commit()
+
+            return jsonify({'message': 'Address and chain deleted successfully'}), 200
+
+        except Exception as e:
+            db.session.rollback()  # Roll back any changes in case of error
+            return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 @app.route('/<primain_name>')
 def display_address(primain_name):

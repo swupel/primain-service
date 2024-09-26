@@ -253,6 +253,7 @@
             fetch(`/check_primain_availability?primain_name=${encodeURIComponent(primainName)}`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log(data); // Debug to check the response
                     const statusElement = document.getElementById('primain-status');
                     if (data.available) {
                         statusElement.innerHTML = '<span style="color: green;">✔️</span>'; // Available
@@ -260,6 +261,7 @@
                         statusElement.innerHTML = '<span style="color: red;">❌</span>'; // Not available
                     }
                 })
+                
                 .catch(error => {
                     console.error('Error checking Primain availability:', error);
                 });
