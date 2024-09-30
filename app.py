@@ -127,8 +127,9 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
     email_verified = db.Column(db.Boolean, default=False)
+    affiliated = db.Column(db.String(100), nullable=False)
     primains = relationship('Primain', backref='owner', lazy=True)
-
+    
 class Primain(db.Model):
     """Primain model to hold data of all registered Primains.
 
@@ -147,6 +148,13 @@ class Primain(db.Model):
     proof = db.Column(db.String(100), nullable=False)
     signature = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+class Affiliate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    affiliate = db.Column(db.String(100), nullable=False)
+    spent = db.Column(db.Integer, unique=False, nullable=False)
+    payed_out = db.Column(db.Integer, unique=False, nullable=False)
+    user_ids = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 def send_password_reset_email(user_email):
     """Sends a password reset email to the user.
@@ -372,6 +380,50 @@ def add_primain(primain_n):
     return render_template('add_primain.html',primain_name=primain_n)
 
 
+@app.route('/signup<affiliate>', methods=['GET', 'POST'])
+def signup_affiliate(affiliate):
+    """Handles user signup.
+
+    Returns:
+        html page: Renders the signup template.
+    """
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+            
+        hashed_password = generate_password_hash(password, method='scrypt')
+        new_user = User(username=username, password=hashed_password, email=email, email_verified=False,affiliated=affiliate)
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+
+            # Send verification email
+            send_verification_email(email)
+            
+            flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
+        
+            try:
+                aff=Affiliate.query.filter_by(affiliate=affiliate).first()
+                user_ids=json.loads(aff.user_ids)
+                user_ids.append(new_user.id)
+                aff.user_ids=json.dumps(user_ids)
+                db.session.commit()
+            except Exception as e:
+                print(e)
+                new_refferal=Affiliate(affiliate=affiliate,spent=0,payed_out=0,user_ids=json.dumps([new_user.id]))
+                db.session.add(new_refferal)
+                db.session.commit()
+                    
+            return redirect(url_for('login'))
+        except FileExistsError as e:
+            db.session.rollback()
+            flash('An error occurred during signup. Please try again.', 'danger')
+
+    
+    return render_template('signup.html')
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     """Handles user signup.
@@ -385,7 +437,7 @@ def signup():
         email = request.form['email']
         
         hashed_password = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_password, email=email, email_verified=False)
+        new_user = User(username=username, password=hashed_password, email=email, email_verified=False, affiliated="")
 
         try:
             db.session.add(new_user)
@@ -395,6 +447,7 @@ def signup():
             send_verification_email(email)
             
             flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
+        
             return redirect(url_for('login'))
         except Exception as e:
             db.session.rollback()
@@ -498,7 +551,15 @@ def success():
     
     # Inform user of success
     flash('Primain registration successful!', 'success')
-    return render_template("index.html")
+    try:
+        aff=Affiliate.query.filter_by(affiliate=current_user.affiliated).first()
+        if aff:
+            aff.spent = aff.spent+20
+            db.session.commit()
+    except:
+        pass
+        
+    return redirect(url_for("index"))
 
 def convert_signature_to_hex(signature_ints):
     """Convert a list of integers (signature) to a hexadecimal string.
