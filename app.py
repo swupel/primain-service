@@ -593,7 +593,7 @@ def register_primain():
     """
     if request.method == 'POST':
         # Retrieve data from the form
-        primain_name = request.form['primain_name']
+        primain_name = request.form['primain_name'].lower()
         proof = request.form['proof']
         address = request.form['address']
         chain = request.form['chain_string']
@@ -707,7 +707,7 @@ def register_primain():
 @app.route('/check_primain_availability')
 def check_primain_availability():
     """Check if the Primain name is available."""
-    primain_name = request.args.get('primain_name')
+    primain_name = request.args.get('primain_name').lower()
 
     if primain_name:
         # Check if the Primain already exists in the database
@@ -832,7 +832,7 @@ def display_address(primain_name):
         html page: Html page filled with either address data or an error.
     """
     # Query the database to find the Primain with the given name
-    primain = Primain.query.filter_by(primain_name=primain_name).first()
+    primain = Primain.query.filter_by(primain_name=primain_name.lower()).first()
     
     if primain:
         data = (
@@ -941,6 +941,15 @@ def generate_affiliate_link():
     affiliate_link = f"https://swupelpms.org/affiliate/{user_id}"
     return affiliate_link  # Logic to generate an affiliate link for the user
 
+@app.route('/TOS')
+@login_required
+def terms_of_service():
+    return render_template("TOS.html")
+
+@app.route('/contact')
+@login_required
+def contact():
+    return render_template("contact.html")
 
 # Run file if executed directly
 if __name__ == '__main__':

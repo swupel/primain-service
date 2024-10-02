@@ -18,7 +18,14 @@
     {% endwith %}
     
     <!-- This block will be overridden in child templates -->
-    {% block content %}
-    {% endblock %}
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+    
+    <footer class="footer">
+      <p>© 2024 Swupel e. U. All rights reserved.</p>
+      <p><a href="/contact">Contact</a> | <a href="/TOS">Terms of Service</a></p>
+    </footer>  
 </body>
 </html>

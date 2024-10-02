@@ -1,21 +1,22 @@
-
 body {
-    margin: 0;
     font-family: Arial, sans-serif;
     background-color: #121212;
     color: #ffffff;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Arrange child elements in a column */
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
+    justify-content: space-between; /* Space out children, pushing footer to bottom */
+    min-height: 100vh; /* Ensure the body takes the full viewport height */
+    padding: 0; /* Remove default padding */
+    margin: 0;
 }
 
+
 h1 {
-    font-size: 2.5rem;
-    color: #5af0b9;
-    margin-bottom: 40px;
+    text-align: center; /* Center the title text */
+    font-size: 2.5rem; /* Adjust the font size as needed */
+    color: #5af0b9; /* Set the title color */
+    margin: 20px 0; /* Add margin to space it from other elements */
 }
 
 ul {
@@ -55,9 +56,9 @@ li a:hover {
 }
 
 .back-button {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
+    position: absolute; /* Use absolute positioning */
+    bottom: 100px; /* Position it above the footer */
+    left: 20px; /* Align with the left edge */
     background-color: #5af0b9;
     color: #121212;
     text-decoration: none;
@@ -67,6 +68,7 @@ li a:hover {
     font-size: 1.2rem; 
     transition: background-color 0.3s;
     cursor: pointer;
+    z-index: 1; /* Ensures it appears above other content */
 }
 
 .back-button:hover {
@@ -401,4 +403,43 @@ input[type="text"]:focus, input[type="password"]:focus {
     background-color: #333;
     color: #ffffff;
     cursor: pointer;
+}
+.content {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    flex: 1; /* Allow this section to grow and fill available space */
+    width: 100%; /* Full width */
+    padding: 20px; /* Optional padding */
+    padding-left: 20px;
+    align-items: center; /* Center items horizontally */
+    margin-top: 10%; /* Add margin to separate from header */
+}
+.content-padding {
+    padding-left: 80px;
+}
+
+
+.footer {
+    background-color: #1e1e1e; /* Dark background to match the theme */
+    color: #ffffff; /* White text for visibility */
+    text-align: center; /* Center the text */
+    padding: 20px; /* Spacing around the content */
+    border-top: 1px solid #5af0b9; /* Subtle border to define the footer */
+    width: 100%; /* Full width */
+    /* No need for extra positioning styles */
+}
+
+.footer p {
+    margin: 5px 0; /* Small margin for spacing */
+    font-size: 0.9rem; /* Slightly smaller font size */
+}
+
+.footer a {
+    color: #5af0b9; /* Use the same color for links */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.3s; /* Smooth color transition on hover */
+}
+
+.footer a:hover {
+    color: #4dc0a1; /* Change color on hover */
 }
