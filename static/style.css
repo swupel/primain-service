@@ -8,14 +8,72 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
+    padding: 20px;
 }
 
 h1 {
     font-size: 2.5rem;
     color: #5af0b9;
+    margin-bottom: 40px;
 }
 
+ul {
+    list-style-type: none;
+    padding: 0;
+    max-width: 800px;
+    width: 100%;
+}
+
+li {
+    background-color: #121212;
+    color: #ffffff;
+    border: 1px solid #5af0b9;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+li:hover {
+    background-color: #1e1e1e;
+}
+
+.faq-answer {
+    display: none;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+li a {
+    color: inherit;
+    text-decoration: none;
+}
+
+li a:hover {
+    color: #4dc0a1;
+}
+
+.back-button {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background-color: #5af0b9;
+    color: #121212;
+    text-decoration: none;
+    padding: 15px 30px; 
+    border-radius: 8px; 
+    text-align: center;
+    font-size: 1.2rem; 
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+
+.back-button:hover {
+    background-color: #4dc0a1;
+}
+
+/* Existing Styles */
 .button-container {
     display: flex;
     flex-direction: column;
@@ -35,25 +93,6 @@ h1 {
 }
 
 .button:hover, .form-button:hover {
-    background-color: #4dc0a1;
-}
-
-.back-button {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background-color: #5af0b9;
-    color: #121212;
-    text-decoration: none;
-    padding: 15px 30px; 
-    border-radius: 8px; 
-    text-align: center;
-    font-size: 1.2rem; 
-    transition: background-color 0.3s;
-    cursor: pointer;
-}
-
-.back-button:hover {
     background-color: #4dc0a1;
 }
 
@@ -136,11 +175,6 @@ p a:hover {
     color: #ffffff;
 }
 
-.message.info {
-    background-color: #ff9800;
-    color: #ffffff;
-}
-
 .network-option {
     display: flex;
     align-items: center;
@@ -170,14 +204,13 @@ li:hover {
     background-color: #1e1e1e;
 }
 
-/* Remove default blue link color */
 li a {
-    color: inherit; /* Inherit parent color (white) */
-    text-decoration: none; /* Remove underline */
+    color: inherit;
+    text-decoration: none;
 }
 
 li a:hover {
-    color: #4dc0a1; /* Hover color */
+    color: #4dc0a1;
 }
 
 .back-button {
@@ -282,7 +315,7 @@ li a:hover {
 
 .edit-button {
     display: inline-flex;
-    align-items: center;  /* Vertically align icon and text */
+    align-items: center;
     background-color: #5af0b9;
     color: #121212;
     padding: 6px 12px;
@@ -294,5 +327,5 @@ li a:hover {
 }
 
 .edit-button i {
-    margin-right: 5px;  /* Space between icon and text */
+    margin-right: 5px;
 }

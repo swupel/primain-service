@@ -179,6 +179,10 @@ def send_password_reset_email(user_email):
     """
     mail.send(msg)
 
+@app.route('/about', methods=['GET'])
+def about():
+    return render_template('about.html')
+
 @app.route('/reset/<token>', methods=['GET', 'POST'])
 def reset_with_token(token):
     """Resets the password using the token provided.
