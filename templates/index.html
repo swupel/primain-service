@@ -3,6 +3,7 @@
 {% block content %}
 <header>
     <h1>Swupel Primain Service</h1>
+    <a href="/manage_account" class="manage-account-button">Manage Account</a> <!-- Added button -->
 </header>
 <main>
     <div class="button-container">
@@ -10,6 +11,7 @@
         <a href="/view_owned_primains" class="button">View owned Primains</a>
         <a href="/" class="button">Primain to Address</a>
     </div>
+    <p><a href="{{ url_for('about') }}">What is all this? Check our F.A.Q!</a></p> 
     <a href="/logout" class="back-button">Logout</a>
 </main>
 {% endblock %}

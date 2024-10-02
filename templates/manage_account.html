@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Manage Account{% endblock %}
+{% block content %}
+<header>
+    <h1>Manage Account</h1>
+</header>
+<main>
+    <div class="form-container">
+        <!-- Change Username -->
+        <div class="collapsible">
+            <h2 class="collapsible-header" onclick="toggleForm('usernameForm')">Change Username</h2>
+            <div id="usernameForm" class="collapsible-content">
+                <form action="/change_username" method="POST">
+                    <div>
+                        <label for="username">New Username:</label>
+                        <span id="username-status"></span>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <button type="submit" class="form-button">Change Username</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="collapsible">
+            <h2 class="collapsible-header" onclick="toggleForm('passwordForm')">Change Password</h2>
+            <div id="passwordForm" class="collapsible-content">
+                <form action="/change_password" method="POST">
+                    <label for="current_password">Current Password:</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                    <label for="new_password">New Password:</label>
+                    <input type="password" id="new_password" name="new_password" required>
+                    <button type="submit" class="form-button">Change Password</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Generate Affiliate Link -->
+        <div class="collapsible">
+            <h2 class="collapsible-header" onclick="toggleForm('affiliateLinkSection')">Generate Affiliate Link</h2>
+            <div id="affiliateLinkSection" class="collapsible-content">
+                <p>Share the following link with your friends to earn rewards:</p>
+                <div>
+                    <input type="text" id="affiliate_link" readonly value="http://primain.eu.loclx.io/{{ user_name }}">
+                </div>
+                <button onclick="copyAffiliateLink()" class="form-button small-button">Copy Affiliate Link</button>
+            </div>
+        </div>
+
+        <a href="/logout" class="button">Logout</a>
+    </div>
+    
+    <a href="/home" class="back-button">Back</a>
+</main>
+
+<script>
+    function copyAffiliateLink() {
+        var link = document.getElementById('affiliate_link');
+        link.select();
+        link.setSelectionRange(0, 99999); /* For mobile devices */
+        document.execCommand("copy");
+        alert("Affiliate link copied: " + link.value);
+    }
+
+    function toggleForm(formId) {
+        var form = document.getElementById(formId);
+        if (form.style.display === "block") {
+            form.style.display = "none"; // Collapse
+        } else {
+            form.style.display = "block"; // Expand
+        }
+    }
+
+    // Initially hide all form contents
+    document.querySelectorAll('.collapsible-content').forEach(function(content) {
+        content.style.display = 'none';
+    });
+
+    document.getElementById('username').addEventListener('input', function() {
+        const primainName = this.value;
+    
+        // Send AJAX request to check availability
+        if (primainName) {
+            fetch(`/check_username_availability?username=${encodeURIComponent(primainName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const statusElement = document.getElementById('username-status');
+                    if (data.available) {
+                        statusElement.innerHTML = '<span style="color: green;">✔️</span>'; // Available
+                    } else {
+                        statusElement.innerHTML = '<span style="color: red;">❌</span>'; // Not available
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking username availability:', error);
+                });
+        } else {
+            document.getElementById('username-status').innerHTML = ''; // Clear status if input is empty
+        }
+    });
+</script>
+
+<style>
+    .collapsible-header {
+        background-color: #1e1e1e;
+        color: #5af0b9;
+        padding: 15px;
+        cursor: pointer;
+        border: 1px solid #5af0b9;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        transition: background-color 0.3s;
+    }
+
+    .collapsible-header:hover {
+        background-color: #4dc0a1; /* Change background on hover */
+    }
+
+    .collapsible-content {
+        padding: 15px;
+        background-color: #1e1e1e; /* Match original form background */
+        border: 1px solid #5af0b9;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    /* Adjust input styles to match original forms */
+    .collapsible-content label {
+        font-size: 1rem;
+        color: #5af0b9;
+    }
+
+    .collapsible-content input[type="text"],
+    .collapsible-content input[type="password"] {
+        padding: 10px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 5px;
+        background-color: #333;
+        color: #ffffff;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .collapsible-content input[type="text"]:focus,
+    .collapsible-content input[type="password"]:focus {
+        outline: none;
+        background-color: #444;
+    }
+
+    /* Specific styling for the affiliate link input box */
+    #affiliate_link {
+        width: calc(100% - 22px); /* Adjusting width to include padding and border */
+        /* Ensure the height is consistent with other input fields */
+        height: 20px; /* Adjust this to match your design */
+    }
+</style>
+
+{% endblock %}

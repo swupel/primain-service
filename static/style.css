@@ -329,3 +329,76 @@ li a:hover {
 .edit-button i {
     margin-right: 5px;
 }
+
+.manage-account-button {
+    position: absolute;
+    top: 20px; /* Position it at the top */
+    right: 20px; /* Position it to the right */
+    background-color: #5af0b9;
+    color: #121212;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+    cursor: pointer;
+}
+
+.manage-account-button:hover {
+    background-color: #4dc0a1;
+}
+
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    background-color: #1e1e1e;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+label {
+    font-size: 1rem;
+    color: #5af0b9;
+}
+
+input[type="text"], input[type="password"] {
+    padding: 10px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: #ffffff;
+}
+
+input[type="text"]:focus, input[type="password"]:focus {
+    outline: none;
+    background-color: #444;
+}
+
+.affiliate-link-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.affiliate-link-section input {
+    padding: 10px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: #ffffff;
+    cursor: pointer;
+}

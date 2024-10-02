@@ -495,12 +495,12 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
             if user.email_verified:
                 login_user(user)
-                flash('Login successful!', 'success')
                 return redirect(url_for('index'))
             else:
                 flash('Please verify your email before logging in.', 'danger')
@@ -719,6 +719,23 @@ def check_primain_availability():
             return jsonify({'available': True})  # Available
     else:
         return jsonify({'available': False})  # Invalid input
+    
+@app.route('/check_username_availability')
+def check_username_availability():
+    """Check if the Primain name is available."""
+    username = request.args.get('username')
+    print(username)
+    if username:
+        # Check if the Primain already exists in the database
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            return jsonify({'available': False})  # Not available
+        else:
+            return jsonify({'available': True})  # Available
+    else:
+        print("invalid")
+        return jsonify({'available': False})  # Invalid input
 
 @app.route('/delete_adress<primain_name>', methods=['DELETE', 'GET'])
 @login_required
@@ -876,6 +893,53 @@ def view_owned_primains():
         # Otherwise show error
         flash('No Primains found for this user.', 'info')
         return render_template('view_owned_primains.html')
+
+@app.route('/change_username', methods=['POST'])
+@login_required
+def change_username():
+    new_username = request.form['username']
+    password = request.form['password']
+    
+    user = current_user
+    if check_password_hash(user.password, password):
+        user.username=new_username
+        try:
+            db.session.commit()
+            flash('Updated username!', 'success')
+            return redirect(url_for('manage_account'))
+        except:
+            db.session.rollback()
+            flash('Username is already taken!', 'danger')
+            return redirect(url_for('manage_account'))
+
+    return redirect(url_for('manage_account'))
+
+@app.route('/change_password', methods=['POST'])
+@login_required
+def change_password():
+    current_password = request.form['current_password']
+    new_password = request.form['new_password']
+
+    user = current_user
+    if check_password_hash(user.password, current_password):
+        user.password = generate_password_hash(new_password, method='scrypt')
+        db.session.commit()
+        flash('Your password has been updated!', 'success')
+
+    return redirect(url_for('manage_account'))
+
+@app.route('/manage_account')
+@login_required
+def manage_account():
+    user_name = current_user.username
+    return render_template('manage_account.html', user_name=user_name)
+
+@app.route('/generate_affiliate_link')
+@login_required
+def generate_affiliate_link():
+    user_id = current_user.id
+    affiliate_link = f"https://swupelpms.org/affiliate/{user_id}"
+    return affiliate_link  # Logic to generate an affiliate link for the user
 
 
 # Run file if executed directly
