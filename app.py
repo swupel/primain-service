@@ -672,6 +672,11 @@ def register_primain():
                         flash('You have already added this Address to your Primain!', 'danger')
                     else:
                         try:
+                            
+                            if chain in json.loads(primain.address):
+                                flash('You only have one Primain per Network!', 'danger')
+                                return render_template('register_primain.html')
+                            
                             # Update existing Primain with new data
                             new_address = json.loads(primain.address)
                             new_address.append(address)
@@ -724,7 +729,6 @@ def check_primain_availability():
 def check_username_availability():
     """Check if the Primain name is available."""
     username = request.args.get('username')
-    print(username)
     if username:
         # Check if the Primain already exists in the database
         user = User.query.filter_by(username=username).first()
@@ -942,14 +946,35 @@ def generate_affiliate_link():
     return affiliate_link  # Logic to generate an affiliate link for the user
 
 @app.route('/TOS')
-@login_required
 def terms_of_service():
     return render_template("TOS.html")
 
 @app.route('/contact')
-@login_required
 def contact():
     return render_template("contact.html")
+
+@app.route('/submit_contact_form', methods=['POST'])
+def submit_contact_form():
+    email=request.form["email"]
+    name=request.form["name"]
+    message=request.form["message"]
+    
+    msg = Message(
+        f'Support Request from {name}',
+        recipients=["anton.graller@swupelpms.com"],
+    )
+    msg.html = f"""
+    <html>
+        <body>
+            <p>Email of person in need: {email}</p>
+            <p>Name of person in need: {name}</p>
+            <p>Message of person in need: {message} </p>
+        </body>
+    </html>
+    """
+    mail.send(msg)
+    flash('We have received your Message and we will get back to you via the provided email!', 'success')
+    return render_template("contact.html"), 201
 
 # Run file if executed directly
 if __name__ == '__main__':

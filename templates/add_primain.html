@@ -8,11 +8,13 @@
     <form id="primain-form" method="POST">
         <div>
             <label for="primain_name">Desired Primain:</label>
-            <input type="text" id="primain_name" name="primain_name" placeholder="Your existing primain" value="{{ primain_name }}" required>
+            <input type="text" id="primain_name" name="primain_name" style="width: 283px;" placeholder="Your existing primain" value="{{ primain_name }}" required>
+            <span class="info-icon" id="primain-info">?</span>
+            <div class="tooltip-text" id="primain-tooltip">A Primain is a unique identifier, like a domain name, e.g., dog.tree.water. The small checkmark/cross to the right will inform you about its availabilty.</div>
         </div>
         <div class="field-with-button">
             <label for="chain">Blockchain Network:</label>
-            <div class="custom-select-wrapper">
+            <div class="custom-select-wrapper" style="width: 276px;"> <!-- Adjust width here -->
                 <div class="custom-select">
                     <div class="custom-select-trigger">
                         <span>Select a Network</span>
@@ -23,23 +25,27 @@
             </div>
             <select id="chain" name="chain" style="display: none;"></select>
             <input type="hidden" id="chain_string" name="chain_string">
+            <span class="info-icon" id="chain-info">?</span>
+            <div class="tooltip-text" id="chain-tooltip">Select the blockchain network where your wallets adress is active. Be careful to select the right network as this will be the final symbol next to your Primain.</div>
         </div>
+        
         <div class="field-with-button">
             <label for="address">Address:</label>
             <input type="text" id="address" name="address" placeholder="Enter your address" required>
             <button type="button" id="import-address" class="small-button">Import Address</button>
+            <span class="info-icon" id="address-info">?</span>
+            <div class="tooltip-text" id="address-tooltip">Your wallet address will be used to register the Primain on the selected blockchain. You can directly import it from your browser wallet.</div>
         </div>
+        
         <div class="field-with-button">
             <label for="proof">Proof:</label>
             <input type="hidden" id="proof" name="proof" value="">
-            <input type="text" id="proof_display" name="proof_display" placeholder="Proof will be displayed here" readonly>
+            <input type="text" style="width: 214px;" id="proof_display" name="proof_display" placeholder="Proof will be displayed here" readonly>
             <button type="button" id="sign-proof" class="small-button">Generate Proof</button>
-        </div>
-        <div>
-            <label>
-                <input type="checkbox" id="disable-network-check"> Disable network check
-            </label>
-        </div>
+            <span class="info-icon" id="proof-info">?</span>
+            <div class="tooltip-text" id="proof-tooltip">The proof is a signature on your primain registration data that verifies your ownership of the provided wallets address.</div>
+        </div>           
+
         <input type="hidden" id="signed_data" name="signed_data">
         <input type="hidden" id="payment-intent" name="payment_intent">  <!-- For payment intent -->
         <button type="submit" class="form-button">Add to Primain</button>
@@ -109,7 +115,6 @@
                 try {
                     const response = await window.solana.connect();
                     document.getElementById("address").value = response.publicKey.toString();
-                    alert("Solana address imported: " + response.publicKey.toString());
                 } catch (error) {
                     alert("Error requesting Solana account: " + error.message);
                 }
@@ -120,14 +125,12 @@
                 console.log(result["publicKey"]);
                 document.getElementById("address").value = result["address"];
                 console.log(result["publicKey"]);
-                alert("Btc wallet imported: " + result["address"]);
             }
             // Check for Ethereum provider
             else if (typeof window.ethereum !== 'undefined') { // Assuming '1' is for Ethereum
             try {
                 const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
                 document.getElementById("address").value = accounts[0];
-                alert("Address imported: " + accounts[0]);
             } catch (error) {
                 alert("Error requesting account: " + error.message);
             }
@@ -159,7 +162,6 @@
                         document.getElementById("proof_display").value = signature.signature.toString('hex');
                         document.getElementById("chain_string").value = selectedChainName;
                         document.getElementById("signed_data").value = message;
-                        alert("Solana signature generated: " + signature.signature.toString('hex'));
                     } catch (error) {
                         alert("Error signing message with Solana: " + error.message);
                     }
@@ -185,19 +187,15 @@
                 // Ethereum Signing Flow
                 try {
                     const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                    if (document.getElementById("disable-network-check").checked) {
+                    const currentChain = await ethereum.request({ method: 'net_version' });
+                    console.log(currentChain,selectedChainValue)
+                    console.log(eth_chains.includes(selectedChainValue))
+                    if (currentChain === selectedChainValue || (eth_chains.includes(currentChain) && eth_chains.includes(selectedChainValue))) {
                         signMessageEthereum(message, selectedChainName);
                     } else {
-                        
-                        const currentChain = await ethereum.request({ method: 'net_version' });
-                        console.log(currentChain,selectedChainValue)
-                        console.log(eth_chains.includes(selectedChainValue))
-                        if (currentChain === selectedChainValue || (eth_chains.includes(currentChain) && eth_chains.includes(selectedChainValue))) {
-                            signMessageEthereum(message, selectedChainName);
-                        } else {
-                            alert("Please switch to the correct network in your wallet of choice.");
-                        }
+                        alert("Please switch to the correct network in your wallet of choice.");
                     }
+                
                 } catch (error) {
                     alert("Error requesting accounts: " + error.message);
                 }
@@ -215,7 +213,6 @@
                 document.getElementById("proof_display").value = result;
                 document.getElementById("chain_string").value = chainName;
                 document.getElementById("signed_data").value = message;
-                alert("Ethereum signature generated: " + result);
             }).catch(function (error) {
                 alert("Error signing message with Ethereum: " + error.message);
             });
@@ -244,5 +241,29 @@
             }
         });
     })
+    document.getElementById('primain_name').addEventListener('input', function() {
+        const primainName = this.value;
+    
+        // Send AJAX request to check availability
+        if (primainName) {
+            fetch(`/check_primain_availability?primain_name=${encodeURIComponent(primainName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data); // Debug to check the response
+                    const statusElement = document.getElementById('primain-status');
+                    if (data.available) {
+                        statusElement.innerHTML = '<span style="color: green;">✔️</span>'; // Available
+                    } else {
+                        statusElement.innerHTML = '<span style="color: red;">❌</span>'; // Not available
+                    }
+                })
+                
+                .catch(error => {
+                    console.error('Error checking Primain availability:', error);
+                });
+        } else {
+            document.getElementById('primain-status').innerHTML = ''; // Clear status if input is empty
+        }
+    });
 </script>
 {% endblock %}

@@ -6,57 +6,54 @@ Terms of Service
 
 {% block content %}
 <header>
-    <h1>Terms of Service</h1>
+    <h1 style="font-size: 2.5rem; font-weight: bold; color: #5af0b9;">Terms of Service</h1>
 </header>
-<main class="content-padding">
-    <section id="introduction">
-        <h2>1. Introduction</h2>
-        <p>Welcome to [Your Service Name]. These Terms of Service ("Terms") govern your access to and use of our services, including our website, mobile application, and any other related services (collectively, the "Services"). By using our Services, you agree to be bound by these Terms.</p>
-    </section>
 
-    <section id="user-responsibilities">
-        <h2>2. User Responsibilities</h2>
-        <p>You agree to use the Services only for lawful purposes and in accordance with these Terms. You agree not to:</p>
-        <ul>
-            <li>Use the Services in any way that violates any applicable federal, state, local, or international law or regulation.</li>
-            <li>Engage in any conduct that restricts or inhibits anyone's use or enjoyment of the Services.</li>
-            <li>Impersonate or attempt to impersonate [Your Service Name], a [Your Service Name] employee, another user, or any other person or entity.</li>
-            <li>Use the Services in any manner that could disable, overburden, damage, or impair the Services or interfere with any other party's use of the Services.</li>
-        </ul>
-    </section>
+<main class="content-padding" style="max-width: 800px; margin: 40px auto; padding: 20px; background-color: #121212; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); font-family: 'Arial', sans-serif; color: #ffffff; line-height: 1.8;">
+    <p style="font-size: 1.1em; padding-left: 20px">By using the services at www.primain.org (mentioned as ‘company’ hereafter), you agree to the following terms and conditions:</p>
+    
+    <ol style="list-style-type: none; margin-left: 20px; padding-left: 0;"> <!-- No automatic numbering -->
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">1.</span> All legal issues related to the workings of the company shall be governed by the jurisdiction prevalent in the city of Vienna, Austria;
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">2.</span> You understand that there will be no refunds/cancellations whatsoever so please ensure that the Primain<sup>©</sup> you wish to purchase are what you wish to own/use. Once the purchase has been made, there will be no refunds/cancellations allowed.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">3.</span> You agree to not use the service for any malicious intentions, illegal activities, or for damaging the reputational, physical, emotional, or psychological wellbeing of individuals and entities.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">4.</span> You understand that we will share information with legal authorities if it is found that some Primain<sup>©</sup>is being used for illegal activities.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">5.</span> We have the rights to deny services to any individual/entity based on our internal risk assessment about how the Primain<sup>©</sup>will be used.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">6.</span> Your Primain<sup>©</sup> may be deleted if asked by legal authorities if it is found that they were involved in illegal activities.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">7.</span> If your Primain<sup>©</sup> violate existing copyrights or trademarks, we reserve the right to delete them.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">8.</span> You agree to use the Primain<sup>©</sup> service in its intended spirit and not for any unintended purposes.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">9.</span> These terms and conditions are subject to change at any time without prior notice.
+        </li>
+        <li style="margin-bottom: 15px;">
+            <span style="font-weight: bold; color: #5af0b9;">10.</span> You promise to have fun while creating and using your Primain<sup>©</sup>!
+        </li>
+    </ol>
 
-    <section id="intellectual-property">
-        <h2>3. Intellectual Property</h2>
-        <p>All content, features, and functionality on the Services, including but not limited to text, graphics, logos, and software, are the exclusive property of [Your Service Name] or its licensors and are protected by copyright, trademark, and other intellectual property laws.</p>
-        <p>You are granted a limited, non-exclusive, non-transferable license to access and use the Services for your personal, non-commercial use.</p>
-    </section>
+    {% if current_user.is_authenticated %}
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="/home" class="back-button" style="padding: 15px 30px; background-color: #5af0b9; color: #121212; border-radius: 8px; text-decoration: none; font-size: 1.2rem; transition: background-color 0.3s;">Back</a>
+    </div>
+    {% else %}
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="/" class="back-button" style="padding: 15px 30px; background-color: #5af0b9; color: #121212; border-radius: 8px; text-decoration: none; font-size: 1.2rem; transition: background-color 0.3s;">Back</a>
+    </div>
+    {% endif %}
 
-    <section id="limitation-of-liability">
-        <h2>4. Limitation of Liability</h2>
-        <p>To the fullest extent permitted by law, [Your Service Name] will not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:</p>
-        <ul>
-            <li>Your access to or use of (or inability to access or use) the Services;</li>
-            <li>Any conduct or content of any third party on the Services;</li>
-            <li>Any content obtained from the Services; and</li>
-            <li>Unauthorized access, use, or alteration of your transmissions or content.</li>
-        </ul>
-    </section>
-
-    <section id="changes-to-terms">
-        <h2>5. Changes to These Terms</h2>
-        <p>[Your Service Name] reserves the right to modify these Terms at any time. We will notify you of any changes by posting the new Terms on this page. You are advised to review these Terms periodically for any changes. Changes to these Terms are effective when they are posted on this page.</p>
-    </section>
-
-    <section id="governing-law">
-        <h2>6. Governing Law</h2>
-        <p>These Terms shall be governed by and construed in accordance with the laws of [Your State/Country], without regard to its conflict of law principles.</p>
-    </section>
-
-    <section id="contact-information">
-        <h2>7. Contact Information</h2>
-        <p>If you have any questions about these Terms, please contact us at:</p>
-        <p>Email: [Your Email Address]<br>Phone: [Your Phone Number]</p>
-    </section>
-    <a href="/home" class="back-button">Back</a>
 </main>
 {% endblock %}

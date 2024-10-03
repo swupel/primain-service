@@ -1,18 +1,45 @@
 {% extends "base.html" %}
 
 {% block title %}
-contact
+Contact Us
 {% endblock %}
 
 {% block content %}
-<header>
-    <h1>Contact</h1>
+<header >
+    <h1 style="font-size: 2.5rem; font-weight: bold; color: #5af0b9;">Contact Us</h1>
 </header>
-<main class="content-padding">
-    <section id="introduction">
-        <h2>1. Introduction</h2>
-        <p>Adding contact data later on</p>
-    </section>
-    <a href="/home" class="back-button">Back</a>
+
+<main class="content-padding" style="max-width: 800px; margin: 40px auto; padding: 20px; background-color: #121212; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); font-family: 'Arial', sans-serif; color: #ffffff; line-height: 1.8;">
+    <p style="font-size: 1.1em;">Have something to share? Please fill in your details below, and we will get in touch with you as soon as possible!</p>
+    
+    <form action="/submit_contact_form" method="POST" style="margin-top: 20px; background-color: #1e1e1e; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">
+        <label for="name" style="font-size: 1rem; color: #5af0b9;">Your Name</label>
+        <input type="text" id="name" name="name" required placeholder="Enter your name" style="padding: 10px; font-size: 1rem; border: none; border-radius: 5px; background-color: #333; color: #ffffff; margin-bottom: 15px;">
+
+        <label for="email" style="font-size: 1rem; color: #5af0b9;">Your Email</label>
+        <input type="email" id="email" name="email" required placeholder="Enter your email" style="padding: 10px; font-size: 1rem; border: none; border-radius: 5px; background-color: #333; color: #ffffff; margin-bottom: 15px;">
+
+        <label for="message" style="font-size: 1rem; color: #5af0b9;">Your Message</label>
+        <textarea id="message" name="message" rows="5" required placeholder="Type your message here" style="padding: 10px; font-size: 1rem; border: none; border-radius: 5px; background-color: #333; color: #ffffff; margin-bottom: 15px;"></textarea>
+
+        <button type="submit" style="background-color: #5af0b9; color: #121212; text-decoration: none; padding: 15px 25px; border-radius: 5px; text-align: center; font-size: 1.2rem; transition: background-color 0.3s; cursor: pointer; border: none;">Submit</button>
+    </form>
+
+    <p style="margin-top: 30px; font-size: 1.1em;">Alternatively, feel free to send us an email directly at:</p>
+    <p style="font-size: 1.1em; color: #5af0b9;">
+        <a href="mailto:contact@primain.org" style="color: #5af0b9; text-decoration: none;">contact@primain.org</a>
+    </p>
+
+
+    {% if current_user.is_authenticated %}
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="/home" class="back-button" style="padding: 15px 30px; background-color: #5af0b9; color: #121212; border-radius: 8px; text-decoration: none; font-size: 1.2rem; transition: background-color 0.3s;">Back</a>
+    </div>
+    {% else %}
+    <div style="text-align: center; margin-top: 40px;">
+        <a href="/" class="back-button" style="padding: 15px 30px; background-color: #5af0b9; color: #121212; border-radius: 8px; text-decoration: none; font-size: 1.2rem; transition: background-color 0.3s;">Back</a>
+    </div>
+    {% endif %}
+
 </main>
 {% endblock %}

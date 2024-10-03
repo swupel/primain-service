@@ -10,62 +10,67 @@
         <input type="text" id="primainName" name="primainName" required>
         <button type="submit" class="button">Get Addresses</button>
     </form>
-    <p><a href="{{ url_for('about') }}">What is all this? Check our F.A.Q!</a></p> 
+    <p><a href="{{ url_for('about') }}" style="align: center">What Are Primains? Check Out Our FAQs</a></p> 
 
     <div id="messageContainer" class="message" style="display: none;"></div>
 
     <div id="addressesDisplay" style="display: none; text-align: center;">
         <!-- Container for displaying addresses dynamically -->
     </div>
-    <a href="/home" class="back-button">Home</a>
+
+    {% if current_user.is_authenticated %}
+        <a href="/home" class="back-button">Back</a>
+    {% else %}
+        <a href="/login" class="back-button">Login</a>
+    {% endif %}
 </main>
+
 <script>
-const networks = [
-            { id: '1', name: 'Ethereum', logo: 'static/ethereum-eth-logo.png' },
-            { id: '137', name: 'Polygon', logo: 'static/polygon-matic-logo.png' },
-            // Add other networks...
-        ];
+    const networks = [
+        { id: '1', name: 'Ethereum', logo: 'static/ethereum-eth-logo.png' },
+        { id: '137', name: 'Polygon', logo: 'static/polygon-matic-logo.png' },
+        // Add other networks...
+    ];
     
-        document.getElementById('primainForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            var primainName = document.getElementById('primainName').value;
-            fetch('/', {
-                method: 'POST',
-                body: new URLSearchParams({ primain_name: primainName }),
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.redirect) {
-                    window.location.href = data.redirect; // Redirect to the display page
-                } else if (data.error) {
-                    var messageContainer = document.getElementById('messageContainer');
-                    messageContainer.textContent = data.error;
-                    messageContainer.className = 'message danger';
-                    messageContainer.style.display = 'block';
-                } else {
-                    // Handle displaying addresses here if needed
-                }
-            })
-            .catch(error => {
+    document.getElementById('primainForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var primainName = document.getElementById('primainName').value;
+        fetch('/', {
+            method: 'POST',
+            body: new URLSearchParams({ primain_name: primainName }),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.redirect) {
+                window.location.href = data.redirect; // Redirect to the display page
+            } else if (data.error) {
                 var messageContainer = document.getElementById('messageContainer');
-                messageContainer.textContent = 'An error occurred. Please try again.';
+                messageContainer.textContent = data.error;
                 messageContainer.className = 'message danger';
                 messageContainer.style.display = 'block';
-                console.error('Error:', error);
-            });
+            } else {
+                // Handle displaying addresses here if needed
+            }
+        })
+        .catch(error => {
+            var messageContainer = document.getElementById('messageContainer');
+            messageContainer.textContent = 'An error occurred. Please try again.';
+            messageContainer.className = 'message danger';
+            messageContainer.style.display = 'block';
+            console.error('Error:', error);
         });
-    
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Address copied to clipboard');
-            }).catch(err => {
-                console.error('Could not copy text: ', err);
-            });
-        }
-    </script>
-    
-{% endblock %}
+    });
 
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Address copied to clipboard');
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+        });
+    }
+</script>
+
+{% endblock %}
