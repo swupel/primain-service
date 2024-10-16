@@ -226,3 +226,27 @@ def verify_bitcoin_signature(address, signature, message):
         print(f"Error: {e.stderr}")
         return None
 
+
+def verify_signature_with_key(message, signature, public_key):
+    """Verifies the ECDSA signature of a message.
+
+    Args:
+        message (str): The message that was signed.
+        signature (bytes): The signature of the message.
+        public_key: The public key that claims to have signed the message.
+
+    Returns:
+        bool: True if the signature is valid, False otherwise.
+    """
+    try:
+        # Deserialize the public key from the Base64 string format
+        public_key = deserialize_string_to_public_key(public_key)
+
+        # Verify the signature using the public key
+        public_key.verify(signature, message, ec.ECDSA(hashes.SHA256()))
+
+        return True  # Signature is valid
+    except Exception as e:
+        print(f"Verification failed: {str(e)}")
+        return False  # Signature is invalid or other error
+    

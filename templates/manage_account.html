@@ -51,8 +51,6 @@
 
         <a href="/logout" class="button">Logout</a>
     </div>
-    
-    <a href="/home" class="back-button">Back</a>
 </main>
 
 <script>
@@ -103,59 +101,65 @@
 </script>
 
 <style>
-    .collapsible-header {
-        background-color: #1e1e1e;
-        color: #5af0b9;
-        padding: 15px;
-        cursor: pointer;
-        border: 1px solid #5af0b9;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        transition: background-color 0.3s;
-    }
+/* Add margin-bottom to the form container so it doesn't overlap with the footer */
+.form-container {
+    padding: 20px;
+    margin-bottom: 50px; /* Ensure space between the content and footer */
+}
 
-    .collapsible-header:hover {
-        background-color: #4dc0a1; /* Change background on hover */
-    }
+/* Styling for collapsible sections */
+.collapsible-header {
+    background-color: #1e1e1e;
+    color: #5af0b9;
+    padding: 15px;
+    cursor: pointer;
+    border: 1px solid #5af0b9;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transition: background-color 0.3s;
+}
 
-    .collapsible-content {
-        padding: 15px;
-        background-color: #1e1e1e; /* Match original form background */
-        border: 1px solid #5af0b9;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
+.collapsible-header:hover {
+    background-color: #4dc0a1;
+}
 
-    /* Adjust input styles to match original forms */
-    .collapsible-content label {
-        font-size: 1rem;
-        color: #5af0b9;
-    }
+.collapsible-content {
+    padding: 15px;
+    background-color: #1e1e1e;
+    border: 1px solid #5af0b9;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
 
-    .collapsible-content input[type="text"],
-    .collapsible-content input[type="password"] {
-        padding: 10px;
-        font-size: 1rem;
-        border: none;
-        border-radius: 5px;
-        background-color: #333;
-        color: #ffffff;
-        width: 100%;
-        margin-bottom: 10px;
-    }
+/* Adjust input styles to match original forms */
+.collapsible-content label {
+    font-size: 1rem;
+    color: #5af0b9;
+}
 
-    .collapsible-content input[type="text"]:focus,
-    .collapsible-content input[type="password"]:focus {
-        outline: none;
-        background-color: #444;
-    }
+.collapsible-content input[type="text"],
+.collapsible-content input[type="password"] {
+    padding: 10px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #333;
+    color: #ffffff;
+    width: 100%;
+    margin-bottom: 10px;
+}
 
-    /* Specific styling for the affiliate link input box */
-    #affiliate_link {
-        width: calc(100% - 22px); /* Adjusting width to include padding and border */
-        /* Ensure the height is consistent with other input fields */
-        height: 20px; /* Adjust this to match your design */
-    }
+.collapsible-content input[type="text"]:focus,
+.collapsible-content input[type="password"]:focus {
+    outline: none;
+    background-color: #444;
+}
+
+/* Specific styling for the affiliate link input box */
+#affiliate_link {
+    width: calc(100% - 22px); /* Adjusting width to include padding and border */
+    height: 20px;
+}
 </style>
 
 {% endblock %}

@@ -518,7 +518,7 @@ def logout():
         html page: Redirects to landing page.
     """
     logout_user()
-    flash('You have been logged out.', 'info')
+    flash('You have been logged out.', 'warning')
     return redirect('/')  # Redirect to login page or home
 
 @app.route('/success', methods=['GET'])
@@ -895,7 +895,6 @@ def view_owned_primains():
         return render_template('view_owned_primains.html', primains=current_user.primains)
     else:
         # Otherwise show error
-        flash('No Primains found for this user.', 'info')
         return render_template('view_owned_primains.html')
 
 @app.route('/change_username', methods=['POST'])
@@ -915,6 +914,9 @@ def change_username():
             db.session.rollback()
             flash('Username is already taken!', 'danger')
             return redirect(url_for('manage_account'))
+        
+    else:
+        flash("Password invalid!","danger")
 
     return redirect(url_for('manage_account'))
 
@@ -929,7 +931,8 @@ def change_password():
         user.password = generate_password_hash(new_password, method='scrypt')
         db.session.commit()
         flash('Your password has been updated!', 'success')
-
+    else:
+        flash('Entered password is invalid!', 'danger')
     return redirect(url_for('manage_account'))
 
 @app.route('/manage_account')

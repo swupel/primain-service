@@ -9,6 +9,7 @@ body {
     min-height: 100vh; /* Ensure the body takes the full viewport height */
     padding: 0; /* Remove default padding */
     margin: 0;
+    height: 100%;/* Make sure the body takes up the full height of the viewport */
 }
 
 
@@ -55,25 +56,6 @@ li a:hover {
     color: #4dc0a1;
 }
 
-.back-button {
-    position: absolute; /* Use absolute positioning */
-    bottom: 100px; /* Position it above the footer */
-    left: 20px; /* Align with the left edge */
-    background-color: #5af0b9;
-    color: #121212;
-    text-decoration: none;
-    padding: 15px 30px; 
-    border-radius: 8px; 
-    text-align: center;
-    font-size: 1.2rem; 
-    transition: background-color 0.3s;
-    cursor: pointer;
-    z-index: 1; /* Ensures it appears above other content */
-}
-
-.back-button:hover {
-    background-color: #4dc0a1;
-}
 
 /* Existing Styles */
 .button-container {
@@ -94,7 +76,22 @@ li a:hover {
     cursor: pointer;
 }
 
-.button:hover, .form-button:hover {
+.gbutton {
+    background-color: #5af0b9; /* Button background color */
+    color: #121212; /* Button text color */
+    text-decoration: none; /* No underline for text */
+    padding: 20px 30px; /* Padding for button */
+    border-radius: 8px; /* Rounded corners */
+    text-align: center; /* Center text within button */
+    font-size: 1.2rem; /* Font size for button text */
+    transition: background-color 0.3s; /* Smooth background color transition */
+    cursor: pointer; /* Pointer cursor on hover */
+    margin-left: -95%; /* Negative margin to shift left (optional) */
+    position: relative; /* Position relative to normal flow */
+    top: -170px; /* Adjust this value to move the button up */
+}
+
+.button:hover, .form-button:hover ,.gbutton:hover{
     background-color: #4dc0a1;
 }
 
@@ -190,7 +187,7 @@ p a:hover {
 
 ul {
     list-style-type: none;
-    padding: 0;
+    padding: 5%;
 }
 
 li {
@@ -215,23 +212,6 @@ li a:hover {
     color: #4dc0a1;
 }
 
-.back-button {
-    background-color: #5af0b9;
-    color: #121212;
-    text-decoration: none;
-    padding: 15px 30px;
-    border-radius: 8px;
-    font-size: 1.2rem;
-    transition: background-color 0.3s;
-    cursor: pointer;
-    display: inline-block;
-    margin-top: 20px;
-}
-
-.back-button:hover {
-    background-color: #4dc0a1;
-}
-
 .small-button {
     background-color: #5af0b9;
     color: #121212;
@@ -246,6 +226,14 @@ li a:hover {
 
 .small-button:hover {
     background-color: #4dc0a1;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centers content vertically */
+    align-items: center; /* Centers content horizontally */
+    margin-top: 5%;
 }
 
 .custom-select-wrapper {
@@ -333,9 +321,9 @@ li a:hover {
 }
 
 .manage-account-button {
-    position: absolute;
-    top: 20px; /* Position it at the top */
-    right: 20px; /* Position it to the right */
+    position: fixed;
+    margin-top: -65%; /* Position it at the top */
+    margin-left: 215%; /* Position it to the right */
     background-color: #5af0b9;
     color: #121212;
     padding: 10px 20px;
@@ -408,11 +396,10 @@ input[type="text"]:focus, input[type="password"]:focus {
     display: flex;
     flex-direction: column; /* Stack children vertically */
     flex: 1; /* Allow this section to grow and fill available space */
-    width: 100%; /* Full width */
-    padding: 20px; /* Optional padding */
-    padding-left: 20px;
+    width: 100%; /* Full width */ /* Optional padding */
     align-items: center; /* Center items horizontally */
-    margin-top: 10%; /* Add margin to separate from header */
+    margin-top: 65%; /* Add margin to separate from header */
+    transform: scale(1.5);
 }
 .content-padding {
     padding-left: 80px;
@@ -423,15 +410,17 @@ input[type="text"]:focus, input[type="password"]:focus {
     background-color: #1e1e1e; /* Dark background to match the theme */
     color: #ffffff; /* White text for visibility */
     text-align: center; /* Center the text */
-    padding: 20px; /* Spacing around the content */
+    padding: 30px; /* Spacing around the content */
     border-top: 1px solid #5af0b9; /* Subtle border to define the footer */
-    width: 100%; /* Full width */
-    /* No need for extra positioning styles */
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 4%;
 }
 
 .footer p {
-    margin: 5px 0; /* Small margin for spacing */
-    font-size: 0.9rem; /* Slightly smaller font size */
+    margin: 2px 0; /* Small margin for spacing */
+    font-size: 1.5rem; /* Slightly smaller font size */
 }
 
 .footer a {
@@ -455,8 +444,8 @@ input[type="text"]:focus, input[type="password"]:focus {
 /* Tooltip text */
 .tooltip-text {
     visibility: hidden;
-    width: 300px; /* Adjust width as needed */
-    height: 100px;
+    width: 250px; /* Adjust width as needed */
+    height: 125px;
     background-color: #333;
     color: #fff;
     text-align: center;
@@ -465,8 +454,8 @@ input[type="text"]:focus, input[type="password"]:focus {
     border-radius: 5px;
     position: absolute;
     z-index: 1;
-    margin-top: -30px; /* Position above the icon */
-    left: 50%;
+    margin-top: -80px; /* Position above the icon */
+    left: 127%; ;
     transform: translateX(-50%);
     opacity: 0;
     transition: opacity 0.3s, visibility 0.3s; /* Transition for opacity and visibility */

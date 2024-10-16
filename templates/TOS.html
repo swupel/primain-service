@@ -45,15 +45,5 @@ Terms of Service
         </li>
     </ol>
 
-    {% if current_user.is_authenticated %}
-    <div style="text-align: center; margin-top: 40px;">
-        <a href="/home" class="back-button" style="padding: 15px 30px; background-color: #5af0b9; color: #121212; border-radius: 8px; text-decoration: none; font-size: 1.2rem; transition: background-color 0.3s;">Back</a>
-    </div>
-    {% else %}
-    <div style="text-align: center; margin-top: 40px;">
-        <a href="/" class="back-button" style="padding: 15px 30px; background-color: #5af0b9; color: #121212; border-radius: 8px; text-decoration: none; font-size: 1.2rem; transition: background-color 0.3s;">Back</a>
-    </div>
-    {% endif %}
-
 </main>
 {% endblock %}

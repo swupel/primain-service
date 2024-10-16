@@ -7,10 +7,14 @@
 <main>
     <form id="primainForm">
         <label for="primainName">Enter Primain Name:</label>
-        <input type="text" id="primainName" name="primainName" required>
+        <input type="text" id="primainName" name="primainName" required size=40>
         <button type="submit" class="button">Get Addresses</button>
     </form>
-    <p><a href="{{ url_for('about') }}" style="align: center">What Are Primains? Check Out Our FAQs</a></p> 
+
+    <!-- Center the FAQ link -->
+    <div style="text-align: center;">
+        <p><a href="{{ url_for('about') }}">What Are Primains? Check Out Our FAQs</a></p>
+    </div>
 
     <div id="messageContainer" class="message" style="display: none;"></div>
 
@@ -18,11 +22,6 @@
         <!-- Container for displaying addresses dynamically -->
     </div>
 
-    {% if current_user.is_authenticated %}
-        <a href="/home" class="back-button">Back</a>
-    {% else %}
-        <a href="/login" class="back-button">Login</a>
-    {% endif %}
 </main>
 
 <script>

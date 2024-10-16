@@ -12,8 +12,7 @@
             <span id="primain-status"></span> <!-- This will show checkmark or cross -->
             <span class="info-icon" id="primain-info">?</span>
             <div class="tooltip-text" id="primain-tooltip">A Primain is a unique identifier, like a domain name, e.g., dog.tree.water. The small checkmark/cross to the right will inform you about its availabilty.</div>
-        </div>
-        
+        </div> 
         <div class="field-with-button">
             <label for="chain">Blockchain Network:</label>
             <div class="custom-select-wrapper" style="width: 276px;"> <!-- Adjust width here -->
@@ -26,9 +25,9 @@
                 </div>
             </div>
             <select id="chain" name="chain" style="display: none;"></select>
-            <input type="hidden" id="chain_string" name="chain_string">
+            <input type="hidden" id="chain_string" name="chain_string" required>
             <span class="info-icon" id="chain-info">?</span>
-            <div class="tooltip-text" id="chain-tooltip">Select the blockchain network where your wallets address is active. Be careful to select the right network as this will be the final symbol next to your Primain.</div>
+            <div class="tooltip-text" id="chain-tooltip">Select the blockchain network where your wallet's address is active. Be careful to select the right network as this will be the final symbol next to your Primain.</div>
         </div>
         
         <div class="field-with-button">
@@ -45,13 +44,13 @@
             <input type="text" style="width: 214px;" id="proof_display" name="proof_display" placeholder="Proof will be displayed here" readonly>
             <button type="button" id="sign-proof" class="small-button">Generate Proof</button>
             <span class="info-icon" id="proof-info">?</span>
-            <div class="tooltip-text" id="proof-tooltip">The proof is a signature on your primain registration data that verifies your ownership of the provided wallets address.</div>
+            <div class="tooltip-text" id="proof-tooltip">The proof is a signature on your Primain registration data that verifies your ownership of the provided wallet's address.</div>
         </div>           
         <input type="hidden" id="signed_data" name="signed_data">
         <input type="hidden" id="payment-intent" name="payment_intent">  <!-- For payment intent -->
         <button type="submit" class="form-button">Proceed to Checkout</button>
     </form>
-    <a href="/home" class="back-button">Back</a>
+
 </main>
 
 <script src="https://js.stripe.com/v3/"></script> <!-- Include Stripe.js -->
@@ -244,13 +243,18 @@
     })
     document.getElementById('primain_name').addEventListener('input', function() {
         const primainName = this.value;
-    
+
+        if (!primainName.trim()) {
+            const statusElement = document.getElementById('primain-status');
+            statusElement.innerHTML = ''; // Clear status if input is empty
+            return;
+        }
+
         // Send AJAX request to check availability
         if (primainName) {
             fetch(`/check_primain_availability?primain_name=${encodeURIComponent(primainName)}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data); // Debug to check the response
                     const statusElement = document.getElementById('primain-status');
                     if (data.available) {
                         statusElement.innerHTML = '<span style="color: green;">✔️</span>'; // Available
@@ -258,7 +262,6 @@
                         statusElement.innerHTML = '<span style="color: red;">❌</span>'; // Not available
                     }
                 })
-                
                 .catch(error => {
                     console.error('Error checking Primain availability:', error);
                 });

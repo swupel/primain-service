@@ -60,20 +60,13 @@
                 {%if network==[] %}
                 <span style="font-size: 18px; color: white;">Primain is owned but has no addresses linked.</span>
                 {%endif%}
-                              
+                {%endif%}      
                 <div id="verificationData" style="display:none;">{{ data }}</div>
             </div>
         </div>
 
-
     </div>
     <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
-    {% endif %}
-    {% if current_user.is_authenticated %}
-        <a href="/home" class="back-button">Home</a>
-    {% else %}
-        <a href="/" class="back-button">Back</a>
-    {% endif %}
 </main>
 <script>
     function copyAddress(address) {

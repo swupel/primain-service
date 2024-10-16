@@ -6,7 +6,6 @@
     <title>{% block title %}Default Title{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="message-container">
@@ -18,14 +17,55 @@
     {% endwith %}
     
     <!-- This block will be overridden in child templates -->
+    <div class="wrapper">
     <div class="content">
         {% block content %}
         {% endblock %}
     </div>
-    
+
+
+   </div>
     <footer class="footer">
       <p>© 2024 Swupel e. U. All rights reserved.</p>
       <p><a href="/contact">Contact</a> | <a href="/TOS">Terms of Service</a></p>
+      <div>
+      <button id='gback-button' class="gbutton">Back</button>
+      </div>
     </footer>  
-</body>
+
+
+
+    {% if not current_user.is_authenticated %}
+    <script>       
+      
+      var currentPath = window.location.pathname;
+      if (currentPath == "/") {
+        document.getElementById('gback-button').innerText="Login";
+
+      } 
+
+    </script>
+    
+    {% endif %}
+    
+    
+    <script>
+
+      if (window.location.pathname == "/home") {
+        document.getElementById('gback-button').style.display = 'none';
+      }
+
+      document.getElementById('gback-button').addEventListener('click', function() {
+        if (document.getElementById('gback-button').innerText != "Login") {
+          window.history.back()
+        }
+        else {
+          window.location.href = "login"
+        }
+        ;})
+        
+
+    </script>
+
+
 </html>
