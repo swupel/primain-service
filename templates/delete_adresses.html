@@ -47,7 +47,7 @@
                             {% if net == chain.name %}
                                 <div style="margin-bottom: 20px; display: flex; align-items: center;">
                                     <img src="{{ url_for('static', filename=chain.logo) }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
-                                    <span style="font-size: 18px;">{{ address[counter] }}</span>
+                                    <span style="font-size: 18px;" class="networkaddress">{{ address[counter] }}</span>
                                     <button id="deleteAddressButton{{ address[counter] }}" class="button" onclick="deleteAddress('{{ address[counter] }}', '{{ chain.name }}')" style="margin-left: 10px;">Delete Address</button>
                                 </div>
                             {% endif %}
@@ -102,4 +102,17 @@
         }
     }
 </script>
+<style>
+    @media (max-width: 600px) {
+        .networkaddress {
+            display: none; /* Hide address on small screens */
+        }
+        .button {
+            display: inline; /* Keep button visible on small screens */
+        }
+        .network-item {
+            justify-content: flex-start; /* Align items to the start */
+        }
+    }
+</style>
 {% endblock %}
