@@ -39,32 +39,29 @@
                     { "id": '500', "name": 'Theta', "logo": 'static/theta-network-theta-logo.png' },
                     { "id": 'QNT', "name": 'Quant', "logo": 'static/quant-qnt-logo.png' }
                 ]%}
-                
 
-                <div style="display: flex; flex-direction: column;">  <!-- Initialize a flag to track linked addresses -->
-                
+                <div style="display: flex; flex-direction: column;">
                     {% for net in network %}
                         {% set counter = loop.index0 %}
                         {% for chain in networks %}
                             {% if net == chain.name %}
-                                    <div style="margin-bottom: 20px; display: flex; align-items: center;">
-                                        <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" style="width: 30px; height: 30px; margin-right: 8px;">
-                                        <span style="font-size: 18px;">{{ address[counter] }}</span>
+                                    <div style="margin-bottom: 20px; display: flex; align-items: center;" class="network-item">
+                                        <img src="{{ chain.logo }}" alt="{{ chain.name }}" title="This Address is only valid on the {{ chain.name }} Mainnet" class="network-logo" style="width: 40px; height: 40px; margin-right: 8px;">
+                                        <span class="network-address" style="font-size: 18px;">{{ address[counter] }}</span>
                                         <button id="copyAddressButton{{ address[counter] }}" class="button" onclick="copyAddress('{{ address[counter] }}')" style="margin-left: 10px;">Copy Address</button>
-                                    </div> 
+                                    </div>
                             {% endif %}
                         {% endfor %}
                     {% endfor %}
                     <span style="font-size: 18px; color: white;">{{ counter }}</span>
                 </div>
-                {%if network==[] %}
+                {% if network == [] %}
                 <span style="font-size: 18px; color: white;">Primain is owned but has no addresses linked.</span>
-                {%endif%}
-                {%endif%}      
+                {% endif %}
+                {% endif %}
                 <div id="verificationData" style="display:none;">{{ data }}</div>
             </div>
         </div>
-
     </div>
     <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
 </main>
@@ -78,7 +75,7 @@
         document.body.removeChild(tempInput);
         alert('Address copied: ' + address);
     }
-        
+
     function copyData() {
         var dataValue = document.getElementById('verificationData').innerText;
         var tempElem = document.createElement('textarea');
@@ -90,4 +87,17 @@
         alert('Verification Data copied to clipboard');
     }
 </script>
+<style>
+    @media (max-width: 600px) {
+        .network-address {
+            display: none; /* Hide address on small screens */
+        }
+        .button {
+            display: inline; /* Keep button visible on small screens */
+        }
+        .network-item {
+            justify-content: flex-start; /* Align items to the start */
+        }
+    }
+</style>
 {% endblock %}

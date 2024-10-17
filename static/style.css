@@ -21,10 +21,10 @@ h1 {
 }
 
 ul {
-    list-style-type: none;
-    padding: 0;
     max-width: 800px;
     width: 100%;
+    list-style-type: none;
+    padding: 5%;
 }
 
 li {
@@ -86,7 +86,7 @@ li a:hover {
     font-size: 1.2rem; /* Font size for button text */
     transition: background-color 0.3s; /* Smooth background color transition */
     cursor: pointer; /* Pointer cursor on hover */
-    margin-left: -95%; /* Negative margin to shift left (optional) */
+    margin-left: -90%; /* Negative margin to shift left (optional) */
     position: relative; /* Position relative to normal flow */
     top: -170px; /* Adjust this value to move the button up */
 }
@@ -183,33 +183,6 @@ p a:hover {
     margin-right: 8px;
     width: 20px;
     height: 20px;
-}
-
-ul {
-    list-style-type: none;
-    padding: 5%;
-}
-
-li {
-    background-color: #121212;
-    color: #ffffff;
-    border: 1px solid #5af0b9;
-    border-radius: 5px;
-    padding: 15px;
-    margin-bottom: 10px;
-}
-
-li:hover {
-    background-color: #1e1e1e;
-}
-
-li a {
-    color: inherit;
-    text-decoration: none;
-}
-
-li a:hover {
-    color: #4dc0a1;
 }
 
 .small-button {
@@ -348,31 +321,6 @@ li a:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-label {
-    font-size: 1rem;
-    color: #5af0b9;
-}
-
-input[type="text"], input[type="password"] {
-    padding: 10px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 5px;
-    background-color: #333;
-    color: #ffffff;
-}
-
-input[type="text"]:focus, input[type="password"]:focus {
-    outline: none;
-    background-color: #444;
-}
-
 .affiliate-link-section {
     display: flex;
     flex-direction: column;
@@ -396,14 +344,59 @@ input[type="text"]:focus, input[type="password"]:focus {
     display: flex;
     flex-direction: column; /* Stack children vertically */
     flex: 1; /* Allow this section to grow and fill available space */
-    width: 100%; /* Full width */ /* Optional padding */
+    width: 100%; /* Full width */
+    max-width: 90vw; /* Ensure content does not exceed 90% of viewport width */
     align-items: center; /* Center items horizontally */
-    margin-top: 65%; /* Add margin to separate from header */
-    transform: scale(1.5);
+    margin-top: 10vh; /* Adjusted margin for responsiveness */
+    transform: scale(1); /* No initial scaling to prevent content from being cut */
+    padding: 2vh; /* Added padding to avoid content touching the edges */
+    box-sizing: border-box; /* Ensure padding is included in element's width */
 }
+
 .content-padding {
-    padding-left: 80px;
+    padding-left: 5vw; /* Use percentage for padding that adjusts with screen size */
+    padding-right: 5vw; /* Add padding on both sides to ensure content stays centered */
+    width: 100%; /* Ensure the element fills its container */
+    box-sizing: border-box; /* Include padding in element width calculation */
 }
+
+@media (max-width: 768px) {
+    .content {
+        transform: scale(1); /* Keep normal scale on smaller screens */
+        margin-top: 15vh; /* Adjust margin on smaller screens */
+    }
+    .content-padding {
+        padding-left: 4vw; /* Smaller padding for smaller screens */
+        padding-right: 4vw;
+    }
+}
+
+@media (max-width: 480px) {
+    .content {
+        transform: scale(0.9); /* Reduce scale slightly on very small screens */
+        margin-top: 10vh; /* Reduce margin for small screens */
+    }
+    .content-padding {
+        padding-left: 3vw; /* Minimal padding for very small screens */
+        padding-right: 3vw;
+    }
+    .gbutton {
+        background-color: #5af0b9; /* Button background color */
+        color: #121212; /* Button text color */
+        text-decoration: none; /* No underline for text */
+        padding: 20px 30px; /* Padding for button */
+        border-radius: 8px; /* Rounded corners */
+        text-align: center; /* Center text within button */
+        font-size: 1.2rem; /* Font size for button text */
+        transition: background-color 0.3s; /* Smooth background color transition */
+        cursor: pointer; /* Pointer cursor on hover */
+        margin-left: 0%; /* Negative margin to shift left (optional) */
+        position: relative; /* Position relative to normal flow */
+        top: -170px; /* Adjust this value to move the button up */
+        margin: -10%;
+    }
+}
+
 
 
 .footer {
@@ -432,6 +425,7 @@ input[type="text"]:focus, input[type="password"]:focus {
 .footer a:hover {
     color: #4dc0a1; /* Change color on hover */
 }
+
 /* Style the question mark icon */
 .info-icon {
     display: inline-block;
