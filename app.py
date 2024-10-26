@@ -22,6 +22,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
 # Generate a serializer object with the app's secret key
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    
 
 def generate_verification_token(email):
     """Generates a verification token for a given email.
@@ -199,8 +200,15 @@ def reset_with_token(token):
         return redirect(url_for('login'))
 
     if request.method == 'POST':
+        
         password = request.form['password']
+        
+        if len(password) <= 12:
+            flash('Password must be atleast 12 characters long!', 'danger')
+            return render_template('reset_with_token.html')
+            
         user = User.query.filter_by(email=email).first()
+        
         if user:
             user.password = generate_password_hash(password, method='scrypt')
             db.session.commit()
@@ -395,6 +403,10 @@ def signup_affiliate(affiliate):
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
+        
+        if len(password) <= 12:
+            flash('Password must be atleast 12 characters long!', 'danger')
+            return render_template('signup.html')
             
         hashed_password = generate_password_hash(password, method='scrypt')
         new_user = User(username=username, password=hashed_password, email=email, email_verified=False,affiliated=affiliate)
@@ -439,6 +451,10 @@ def signup():
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
+        
+        if len(password) <= 12:
+            flash('Password must be atleast 12 characters long!', 'danger')
+            return render_template('signup.html')
         
         hashed_password = generate_password_hash(password, method='scrypt')
         new_user = User(username=username, password=hashed_password, email=email, email_verified=False, affiliated="")
@@ -925,6 +941,10 @@ def change_username():
 def change_password():
     current_password = request.form['current_password']
     new_password = request.form['new_password']
+    
+    if new_password <= 12:
+        flash('Password must be atleast 12 characters long!', 'danger')
+        return redirect(url_for('manage_account'))
 
     user = current_user
     if check_password_hash(user.password, current_password):
