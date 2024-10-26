@@ -111,4 +111,203 @@
         });
     });
 </script>
+<script>
+    const networks = [
+        { id: '1', name: 'Ethereum', logo: 'static/ethereum-eth-logo.png' },
+        { id: '137', name: 'Polygon', logo: 'static/polygon-matic-logo.png' },
+        { id: '56', name: 'Binance Smart Chain', logo: 'static/bnb-bnb-logo.png' },
+        { id: '43114', name: 'Avalanche', logo: 'static/avalanche-avax-logo.png' },
+        { id: '250', name: 'Fantom', logo: 'static/fantom-ftm-logo.png' },
+        { id: '42161', name: 'Arbitrum', logo: 'static/arbitrum-arb-logo.png' },
+        { id: '10', name: 'Optimism', logo: 'static/optimism-ethereum-op-logo.png' },
+        { id: '61', name: 'Harmony', logo: 'static/harmony-one-logo.png' },
+        { id: '25', name: 'Cronos', logo: 'static/cronos-cro-logo.png' },
+        { id: '42220', name: 'Celo', logo: 'static/celo-celo-logo.png' },
+        { id: '0', name: 'Bitcoin', logo: 'static/bitcoin-btc-logo.png' },
+        { id: '101', name: 'Solana', logo: 'static/solana-sol-logo.png' },
+        { id: 'tether', name: 'Tether', logo: 'static/tether-usdt-logo.png' },
+        { id: '6', name: 'USD Coin', logo: 'static/usd-coin-usdc-logo.png' },
+        { id: 'Dogecoin', name: 'Dogecoin', logo: 'static/dogecoin-doge-logo.png' },
+        { id: '1001', name: 'TONCOIN', logo: 'static/toncoin-ton-logo.png' },
+        { id: '0xShiba', name: 'Shiba INU', logo: 'static/shiba-inu-shib-logo.png' },
+        { id: '1c', name: 'Chainlink', logo: 'static/chainlink-link-logo.png' },
+        { id: '0xDAI', name: 'DAI', logo: 'static/multi-collateral-dai-dai-logo.png' },
+        { id: '0xLEO', name: 'LEO', logo: 'static/unus-sed-leo-leo-logo.png' },
+        { id: '0xUniswap', name: 'Uniswap', logo: 'static/uniswap-uni-logo.png' },
+        { id: '461', name: 'Filecoin', logo: 'static/filecoin-fil-logo.png' },
+        { id: '500', name: 'Theta', logo: 'static/theta-network-theta-logo.png' },
+        { id: 'QNT', name: 'Quant', logo: 'static/quant-qnt-logo.png' },
+    ];
+    const eth_chains = ['1','1c', 'Dogecoin', '6', 'tether', '1001', '0xShiba', '0xDAI', '0xLEO', 'Un0xUniswap', '461', '500', 'QNT','56'];
+    document.addEventListener("DOMContentLoaded", function() {
+        const customOptionsContainer = document.querySelector('.custom-options');
+        const selectElement = document.getElementById('chain');
+        networks.forEach(network => {
+            const option = document.createElement('span');
+            option.className = 'custom-option network-option';
+            option.setAttribute('data-value', network.id);
+            option.setAttribute('data-name', network.name);
+            option.innerHTML = `<img src="${network.logo}" alt="${network.name}"> ${network.name}`;
+            customOptionsContainer.appendChild(option);
+            const selectOption = document.createElement('option');
+            selectOption.value = network.id;
+            selectOption.textContent = network.name;
+            selectElement.appendChild(selectOption);
+        });
+        document.getElementById("import-address").addEventListener("click", async function() {
+            // Get the selected chain value
+            const selectedChainValue = document.getElementById("chain").value;
+        
+            // Check for Solana provider
+            if (typeof window.solana !== 'undefined' && selectedChainValue === '101') { // Assuming '101' is for Solana
+                try {
+                    const response = await window.solana.connect();
+                    document.getElementById("address").value = response.publicKey.toString();
+                } catch (error) {
+                    alert("Error requesting Solana account: " + error.message);
+                }
+            } 
+            // Check for Solana provider
+            else if (typeof window.okxwallet !== 'undefined' && selectedChainValue === '0'){
+                const result = await okxwallet.bitcoin.connect();
+                console.log(result["publicKey"]);
+                document.getElementById("address").value = result["address"];
+                console.log(result["publicKey"]);
+            }
+            // Check for Ethereum provider
+            else if (typeof window.ethereum !== 'undefined') { // Assuming '1' is for Ethereum
+            try {
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                document.getElementById("address").value = accounts[0];
+            } catch (error) {
+                alert("Error requesting account: " + error.message);
+            }
+            } 
+            
+            else {
+                console.log(selectedChainValue)
+                alert("No wallet available. Please install a wallet to import the address.");
+            }
+        });
+        
+        document.getElementById("sign-proof").addEventListener("click", async function () {
+            var primainName = document.getElementById("primain_name").value;
+            var address = document.getElementById("address").value;
+            var selectedChainValue = document.getElementById("chain").value;
+            var selectedChainName = document.querySelector(`.custom-option[data-value="${selectedChainValue}"]`).getAttribute("data-name");
+            var message = primainName + selectedChainName + address;
+
+            if (selectedChainValue === '101') {
+                // Solana Signing Flow
+                if (typeof window.solana !== 'undefined') {
+                    try {
+                        const { publicKey } = await window.solana.connect();
+                        const encodedMessage = new TextEncoder().encode(message);
+                        const signature = await window.solana.signMessage(encodedMessage, 'utf8');
+                        document.getElementById("proof").value = signature.signature.toString('hex');
+                        document.getElementById("proof_display").value = signature.signature.toString('hex');
+                        document.getElementById("chain_string").value = selectedChainName;
+                        document.getElementById("signed_data").value = message;
+                    } catch (error) {
+                        alert("Error signing message with Solana: " + error.message);
+                    }
+                } else {
+                    alert("Solana wallet not available. Please install a Solana wallet (like Phantom).");
+                }
+            }
+            else if (selectedChainValue === '0'&& typeof window.okxwallet !== 'undefined') {
+                
+                try{
+                    const signature = await window.okxwallet.bitcoin.signMessage(message, 'ecdsa')
+                    document.getElementById("proof").value = signature.toString('hex');
+                    document.getElementById("proof_display").value = signature.toString('hex');
+                    document.getElementById("chain_string").value = selectedChainName;
+                    document.getElementById("signed_data").value = message;
+                } catch (error) {
+                    alert("Error signing message with BTC: " + error.message)
+                }
+                
+            }
+            
+             else if (typeof window.ethereum !== 'undefined') {
+                // Ethereum Signing Flow
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                    const currentChain = await ethereum.request({ method: 'net_version' });
+                    console.log(currentChain,selectedChainValue)
+                    console.log(eth_chains.includes(selectedChainValue))
+                    if (currentChain === selectedChainValue || (eth_chains.includes(currentChain) && eth_chains.includes(selectedChainValue))) {
+                        signMessageEthereum(message, selectedChainName);
+                    } else {
+                        alert("Please switch to the correct network in your wallet of choice.");
+                    }
+                
+                } catch (error) {
+                    alert("Error requesting accounts: " + error.message);
+                }
+            } else {
+                alert("Wallet is not available. Please install a wallet to sign messages.");
+            }
+        });
+        function signMessageEthereum(message, chainName) {
+            ethereum.request({
+                method: 'personal_sign',
+                params: [message, ethereum.selectedAddress],
+            }).then(function (result) {
+                document.getElementById("proof").value = result;
+                document.getElementById("proof_display").value = result;
+                document.getElementById("chain_string").value = chainName;
+                document.getElementById("signed_data").value = message;
+            }).catch(function (error) {
+                alert("Error signing message with Ethereum: " + error.message);
+            });
+        }
+
+        var customSelectTrigger = document.querySelector('.custom-select-trigger');
+        var customSelect = document.querySelector('.custom-select');
+        customSelectTrigger.addEventListener('click', function() {
+            customSelect.classList.toggle('opened');
+        });
+        document.querySelectorAll('.custom-option').forEach(function(option) {
+            option.addEventListener('click', function() {
+                var value = option.getAttribute('data-value');
+                var text = option.textContent.trim();
+                selectElement.value = value;
+                customSelectTrigger.querySelector('span').textContent = text;
+                customSelect.classList.remove('opened');
+            });
+        });
+        document.addEventListener('click', function(e) {
+            if (!customSelect.contains(e.target)) {
+                customSelect.classList.remove('opened');
+            }
+        });
+    })
+    document.getElementById('primain_name').addEventListener('input', function() {
+        const primainName = this.value;
+        if (!primainName.trim()) {
+            const statusElement = document.getElementById('primain-status');
+            statusElement.innerHTML = ''; // Clear status if input is empty
+            return;
+        }
+        // Send AJAX request to check availability
+        if (primainName) {
+            fetch(`/check_primain_availability?primain_name=${encodeURIComponent(primainName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const statusElement = document.getElementById('primain-status');
+                    if (data.available) {
+                        statusElement.innerHTML = '<span style="color: green;">✔️</span>'; // Available
+                    } else {
+                        statusElement.innerHTML = '<span style="color: red;">❌</span>'; // Not available
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking Primain availability:', error);
+                });
+        } else {
+            document.getElementById('primain-status').innerHTML = ''; // Clear status if input is empty
+        }
+    });
+</script>
 {% endblock %}
