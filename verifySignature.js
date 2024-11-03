@@ -1,4 +1,3 @@
-const bitcoin = require('bitcoinjs-lib');
 const bitcoinMessage = require('bitcoinjs-message');
 
 // Function to verify a Bitcoin signature
