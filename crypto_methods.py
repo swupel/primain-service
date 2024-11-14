@@ -359,4 +359,3 @@ def verify_signature_with_key(message, signature, public_key):
     except Exception as e:
         print(f"Verification failed: {str(e)}")
         return False  
-    

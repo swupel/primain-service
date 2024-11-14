@@ -55,16 +55,15 @@
                     {% endfor %}
                     <span style="font-size: 18px; color: white;">{{ counter }}</span>
                 </div>
-                {% if network == [] %}
-                <span style="font-size: 18px; color: white;">Primain is owned but has no addresses linked.</span>
-                {% endif %}
                 {% endif %}
                 <div id="verificationData" style="display:none;">{{ data }}</div>
             </div>
         </div>
     </div>
-    <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
-</main>
+    {% if network != None %}
+     <button id="copyDataButton" class="button" onclick="copyData()" style="margin-top: 10px; display: block; margin: 0 auto;">Copy Verification Data</button>
+    {% endif %}
+    </main>
 <script>
     function copyAddress(address) {
         const tempInput = document.createElement('textarea');

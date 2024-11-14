@@ -540,7 +540,7 @@ def signup_affiliate(affiliate):
             
         #Create hashed password and user
         hashed_password = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_password, email=email, email_verified=False,affiliated=affiliate)
+        new_user = User(username=username, password=hashed_password, email=email, email_verified=True,affiliated=affiliate)
 
         try:
             
@@ -549,7 +549,7 @@ def signup_affiliate(affiliate):
             db.session.commit()
 
             # Send verification email
-            send_verification_email(email)
+           # send_verification_email(email)
             flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
         
             try:
@@ -576,8 +576,9 @@ def signup_affiliate(affiliate):
             return redirect(url_for('login'))
         
         #Catch any errors and inform user
-        except:
+        except Exception as e:
             db.session.rollback()
+            print(e)
             flash('An error occurred during signup. Please try again.', 'danger')
 
     #If get request... jsut render the page
@@ -1148,7 +1149,14 @@ def manage_account():
     
     #Render page for logged in user
     user_name = current_user.username
-    return render_template('manage_account.html', user_name=user_name)
+    
+    try:
+        af=Affiliate.query.filter_by(affiliate=user_name).first()
+        balance=af.spent-af.payed_out
+    except AttributeError:
+        balance=0
+    
+    return render_template('manage_account.html', user_name=user_name, earned=balance)
 
 
 @app.route('/TOS')
