@@ -22,15 +22,59 @@
         <!-- Container for displaying addresses dynamically -->
     </div>
 
+    <div id="dynamicBoxes" class="dynamic-boxes-container">
+        <div class="dynamic-box">
+            <h2>Say Goodbye to complicated long wallet adddresses!</h2>
+            <p>Just Register a Primain and Receive funds under your personal, company or even user name!</p>
+        </div>
+        <div class="dynamic-box">
+            <h2>Try It Out</h2>
+            <p>Wanna say Goodbye to antiquated old addresses? Click here:</p>
+            <a href="/signup" class="button-link">
+                <button class="button">Get your very own Primain</button>
+            </a>
+        </div>
+        <div class="dynamic-box">
+            <h2>Too good to be true?</h2>
+            <p>If you want more information on what makes Primains work, check our <a href="https://example.com/patent">patent</a> and prepare to be amazed</p>
+        </div>
+        <div class="dynamic-box">
+            <h2>Become an Affiliate</h2>
+            <p>Join our <a href="https://example.com/affiliate"> affiliate program </a> and start earning rewards today!</p>
+        </div>
+    </div>
 </main>
 
 <script>
-    const networks = [
-        { id: '1', name: 'Ethereum', logo: 'static/ethereum-eth-logo.png' },
-        { id: '137', name: 'Polygon', logo: 'static/polygon-matic-logo.png' },
-        // Add other networks...
-    ];
-    
+    // Scroll event listener to add 'visible' class to boxes as they come into view
+    window.addEventListener('scroll', function() {
+        const boxes = document.querySelectorAll('.dynamic-box');
+        const triggerBottom = window.innerHeight * 0.8; // Trigger when the box is 80% visible
+
+        boxes.forEach(box => {
+            const boxTop = box.getBoundingClientRect().top;
+            const boxBottom = box.getBoundingClientRect().bottom;
+
+            // Check if the box is in view
+            if (boxTop < triggerBottom && boxBottom > 0) {
+                if (!box.classList.contains('visible')) {
+                    box.classList.add('visible'); // Add 'visible' class to trigger the animation
+                    
+                    // Add the glowing effect initially
+                    box.classList.add('glowing');
+                    
+                    // Set timeout to remove the glow effect after 3 seconds
+                    setTimeout(() => {
+                        box.classList.remove('glowing'); // Remove the glowing class after 3 seconds
+                    }, 3000); // 3000ms = 3 seconds
+                }
+            } else {
+                box.classList.remove('visible'); // Remove 'visible' if not in view
+            }
+        });
+    });
+
+    // Handling form submission
     document.getElementById('primainForm').addEventListener('submit', function(event) {
         event.preventDefault();
         var primainName = document.getElementById('primainName').value;
@@ -50,8 +94,6 @@
                 messageContainer.textContent = data.error;
                 messageContainer.className = 'message danger';
                 messageContainer.style.display = 'block';
-            } else {
-                // Handle displaying addresses here if needed
             }
         })
         .catch(error => {
@@ -62,14 +104,5 @@
             console.error('Error:', error);
         });
     });
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Address copied to clipboard');
-        }).catch(err => {
-            console.error('Could not copy text: ', err);
-        });
-    }
 </script>
-
 {% endblock %}

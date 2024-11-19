@@ -488,3 +488,70 @@ p a:hover {
     opacity: 1;
     color: #5af0b9;
 }
+    /* Container for dynamic boxes */
+    .dynamic-boxes-container {
+        display: flex;
+        flex-direction: column;
+        gap: 100px;
+        align-items: center;
+        margin-top: 160px;
+        margin-bottom: 60px;
+        margin-right: 20px;
+        margin-left: 30px;
+        padding: 0;
+    }
+
+    /* Individual box styles */
+    .dynamic-box {
+        background-color: rgba(0, 0, 0, 0.2); /* Transparent black background */
+        border: 2px solid #5af0b9; /* Cyan outline */
+        border-radius: 10px;
+        width: 80%;
+        padding: 20px;
+        text-align: center;
+        opacity: 0; /* Initially hidden for animation */
+        transform: translateY(50px); /* Start position for animation */
+        transition: transform 0.8s ease, opacity 0.8s ease, box-shadow 1s ease; /* Smooth transition for box-shadow */
+    }
+
+    /* Glowing effect when box becomes visible */
+    .dynamic-box.visible {
+        opacity: 1;
+        transform: translateY(0); /* Box moves to normal position */
+    }
+
+    /* Additional glowing effect that can be removed */
+    .dynamic-box.glowing {
+        box-shadow: 0 0 10px 10px #5af0b9; /* Stronger glow */
+    }
+
+    /* Hover effect on the box */
+    .dynamic-box:hover {
+        background-color: rgba(0, 0, 0, 0.3); /* Darker background on hover */
+    }
+
+    /* Style for the h2 */
+    .dynamic-box h2 {
+        color: #5af0b9;
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    /* Style for the p */
+    .dynamic-box p {
+        color: #ffffff;
+        font-size: 1rem;
+    }
+
+    /* Media Queries for responsiveness */
+    @media (max-width: 768px) {
+        .dynamic-box {
+            width: 90%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .dynamic-box {
+            width: 95%;
+        }
+    }
