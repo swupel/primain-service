@@ -1,6 +1,12 @@
 {% extends "base.html" %}
+
 {% block title %}Primain Address{% endblock %}
+
 {% block content %}
+<head>
+    <!-- Add Font Awesome CDN to your <head> in base.html -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
 <header>
     <h1>Primain Address</h1>
 </header>
@@ -18,13 +24,24 @@
 
     <div id="messageContainer" class="message" style="display: none;"></div>
 
+    <!-- Desktop Only Animated Indicator (Your 3 V's effect) -->
+    <div id="scrollingIcon" class="scrolling-icon">
+        <div class="indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
     <div id="addressesDisplay" style="display: none; text-align: center;">
         <!-- Container for displaying addresses dynamically -->
     </div>
 
     <div id="dynamicBoxes" class="dynamic-boxes-container">
-        <div class="dynamic-box">
-            <h2>Say Goodbye to complicated long wallet adddresses!</h2>
+        <div class="dynamic-box" id="firstBox">
+            <h2>Say Goodbye to complicated long wallet addresses!</h2>
             <p>Just Register a Primain and Receive funds under your personal, company or even user name!</p>
         </div>
         <div class="dynamic-box">
@@ -59,7 +76,7 @@
             if (boxTop < triggerBottom && boxBottom > 0) {
                 if (!box.classList.contains('visible')) {
                     box.classList.add('visible'); // Add 'visible' class to trigger the animation
-                    
+
                     // Add the glowing effect initially
                     box.classList.add('glowing');
                     
@@ -72,37 +89,123 @@
                 box.classList.remove('visible'); // Remove 'visible' if not in view
             }
         });
-    });
 
-    // Handling form submission
-    document.getElementById('primainForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        var primainName = document.getElementById('primainName').value;
-        fetch('/', {
-            method: 'POST',
-            body: new URLSearchParams({ primain_name: primainName }),
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+    // Handle fading out the scrolling indicator when scrolled past a certain point
+    const scrollingIcon = document.getElementById('scrollingIcon');
+    if (window.scrollY > 150) {  // Adjust this value to decide when to start fading out
+        fadeOut(scrollingIcon); // Start the fade out effect
+    } else {
+        fadeIn(scrollingIcon); // Optionally fade back in when scrolled up
+    }
+});
+
+// Function to gradually fade out an element by reducing opacity
+function fadeOut(element) {
+    let opacity = 1; // Start with full opacity
+
+    // Use setInterval to reduce opacity gradually
+    const fadeInterval = setInterval(function() {
+        if (opacity <= 0) {
+            clearInterval(fadeInterval); // Stop the interval once opacity reaches 0
+            element.style.display = 'none'; // Optionally hide the element when fully faded out
+        } else {
+            opacity -= 0.05; // Decrease opacity by 0.05 each time
+            element.style.opacity = opacity; // Update the element's opacity
+        }
+    }, 50); // 50ms interval between opacity changes
+}
+
+// Function to gradually fade in an element by increasing opacity
+function fadeIn(element) {
+    let opacity = parseFloat(window.getComputedStyle(element).opacity); // Get current opacity
+
+    if (opacity < 1) {
+        const fadeInterval = setInterval(function() {
+            if (opacity >= 1) {
+                clearInterval(fadeInterval); // Stop the interval once opacity reaches 1
+            } else {
+                opacity += 0.05; // Increase opacity by 0.05 each time
+                element.style.opacity = opacity; // Update the element's opacity
+                element.style.display = 'block'; // Make sure the element is visible
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.redirect) {
-                window.location.href = data.redirect; // Redirect to the display page
-            } else if (data.error) {
-                var messageContainer = document.getElementById('messageContainer');
-                messageContainer.textContent = data.error;
-                messageContainer.className = 'message danger';
-                messageContainer.style.display = 'block';
-            }
-        })
-        .catch(error => {
-            var messageContainer = document.getElementById('messageContainer');
-            messageContainer.textContent = 'An error occurred. Please try again.';
-            messageContainer.className = 'message danger';
-            messageContainer.style.display = 'block';
-            console.error('Error:', error);
-        });
-    });
+        }, 50); // 50ms interval between opacity changes
+    }
+}
 </script>
+
+<style>
+    /* CSS for the animated icon, visible only on desktop */
+#scrollingIcon {
+    display: block; /* Ensure the scrolling icon is initially visible */
+    position: fixed;
+    bottom: 1038px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    opacity: 1; /* Default opacity */
+    transition: opacity 1s ease-out; /* Fade out transition */
+}
+
+@media (min-width: 768px) {
+    #scrollingIcon {
+        display: block;
+    }
+}
+
+/* Fade-out class */
+.fade-out {
+    opacity: 0; /* This will make it fade away */
+}
+
+/* Styles for the indicator */
+.indicator {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    transform: rotate(45deg); /* Rotate to get the "V" effect */
+}
+
+.indicator span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    height: 50%;
+    box-sizing: border-box;
+    border: none;
+    border-bottom: 1.5px solid #fff;
+    border-right: 1.5px solid #fff;
+    animation: animate 3s linear infinite; /* Increased duration from 1s to 3s */
+}
+
+/* Animation for the indicator */
+.indicator span:nth-child(1) {
+    top: -30px;
+    left: -30px;
+    animation-delay: 0s;
+}
+
+.indicator span:nth-child(2) {
+    top: -15px;
+    left: -15px;
+    animation-delay: 0.2s;
+}
+
+/* Keyframes for the animation */
+@keyframes animate {
+    0% {
+        border-color: #fff;
+        transform: translate(0, 0);
+    }
+    20% {
+        border-color: #fff;
+        transform: translate(15px, 15px);
+    }
+    20.1%, 100% {
+        border-color: #5af0b9;
+    }
+}
+
+</style>
+
 {% endblock %}
