@@ -1,9 +1,12 @@
 {% extends "base.html" %}
+
 {% block title %}Manage Account{% endblock %}
+
 {% block content %}
 <header>
     <h1>Manage Account</h1>
 </header>
+
 <main>
     <div class="form-container">
         <!-- Change Username -->
@@ -50,8 +53,28 @@
             </div>
         </div>
 
-        <a href="/logout" class="button">Logout</a>
+        <div class="collapsible">
+            <h2 class="collapsible-header" onclick="toggleForm('subscriptionsLinkSection')">Manage your Subscriptions</h2>
+            <div id="subscriptionsLinkSection" class="collapsible-content">
+                {% if primains %}
+                <ul>
+                    {% for primain in primains %}
+                        <li>
+                            <!-- Link to the primain -->
+                            <a href="/{{ primain.primain_name }}" class="primain-link">{{ primain.primain_name }}</a>
+        
+                            <!-- Small button next to the link to add a new address -->
+                            <a href="javascript:void(0);" style="color:#5af0b9;" onclick="confirmCancelSubscription('{{ primain.primain_name }}')">Cancel</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="message message-info">No Primains found for this user.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
+    <a href="/logout" class="button">Logout</a>
 </main>
 
 <script>
@@ -99,6 +122,33 @@
             document.getElementById('username-status').innerHTML = ''; // Clear status if input is empty
         }
     });
+
+    function confirmCancelSubscription(primainName, primainId) {
+        const confirmation = confirm(`Are you sure you want to cancel your subscription and lose ownership of your Primain "${primainName}"? This action cannot be undone.`);
+        
+        if (confirmation) {
+            // Prepare the data to send
+            const data = { primain_id: primainId };
+
+            // Send POST request to cancel the subscription
+            fetch(`/cancel_subscription/${primainName}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();  
+            })
+            .catch(error => {
+                console.error('Error canceling subscription:', error);
+                alert('There was an error canceling your subscription.');
+            });
+        }
+    }
 </script>
 
 <style>

@@ -1,8 +1,9 @@
 #Manage partial imports
 from flask_login import login_required, current_user, login_user, LoginManager, UserMixin, logout_user
-from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
+from datetime import datetime, timedelta
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
@@ -36,9 +37,9 @@ app.config['MAIL_SERVER'] = 'swupelpms.com' #Mail server domain
 app.config['MAIL_PORT'] = 465 #Port to send from
 app.config['MAIL_USE_SSL'] = True  # Use SSL for secure communication
 app.config['MAIL_USE_TLS'] = False #Dont use TLS
-app.config['MAIL_USERNAME'] = "info@swupelpms.com"  #Your email
+app.config['MAIL_USERNAME'] = "email.verification@swupelpms.com"  #Your email
 app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PASS')  #Your email password
-app.config['MAIL_DEFAULT_SENDER'] = "info@swupelpms.com"  #Default sender
+app.config['MAIL_DEFAULT_SENDER'] = "email.verification@swupelpms.com"  #Default sender
 mail = Mail(app)
 
 #Store successes
@@ -75,6 +76,7 @@ class Primain(db.Model):
         proof (str): Signature proving ownership over this primain.
         signature (str): Signature for verification, linked to ownership proof.
         user_id (int): ID of the user who owns the primain.
+        subscription_id (str): Stripe subscription ID  
     """
     id = db.Column(db.Integer, primary_key=True)
     primain_name = db.Column(db.String(100), unique=True, nullable=False)
@@ -83,6 +85,7 @@ class Primain(db.Model):
     proof = db.Column(db.String(100), nullable=False)
     signature = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subscription_id = db.Column(db.String(100), nullable=False)
     
 class Affiliate(db.Model):
     """Affiliate model to track user affiliations and payment details.
@@ -111,6 +114,77 @@ def generate_verification_token(email):
         str: The generated token.
     """
     return s.dumps(email, salt=app.config['SECRET_KEY'])
+
+
+@app.route('/cancel_subscription/<primain_name>', methods=['POST'])
+def cancel_subscription(primain_name):
+    """Function which allows users to cancel their subscription
+
+    Args:
+        primain_name (str): Name of the Primain which they want to cancel their subscription for
+
+    Returns:
+        Json: Confirmation Message
+    """
+    try:
+
+        #Retrieve primain from DB
+        primain = Primain.query.filter_by(primain_name=primain_name).first()
+        
+        #If it cant be found return an error
+        if not primain:
+            return jsonify({"message": "Error canceling subscription!"}), 400
+        
+        #Inform user if they dont own the Primain
+        if primain.user_id != current_user.id:
+            return jsonify({"message": "You are not the owner of this Primain"}), 400
+        
+        #Cancel the stripe subscription via the id stored in the primain
+        stripe.api_key = os.getenv('stripe_key')        
+        subscription = stripe.Subscription.retrieve(primain.subscription_id)
+        subscription.cancel()
+        
+        #Commit deletion of the primain to the DB
+        db.session.delete(primain)
+        db.session.commit()
+
+        #Return confirmation
+        return jsonify({"message": "Subscription canceled successfully"})
+    
+    #Catch and return any error
+    except Exception as e:
+        return jsonify({"message": "Error canceling subscription: " + str(e)}), 400
+
+
+def check_subscription_status(subscription_id):
+    """Checks status of a users subscription
+
+    Args:
+        subscription_id (str): Stripe subscription ID
+
+    Returns:
+        bool: Validity of the id
+    """
+    try:
+        
+        #Retrieve the subscription using the subscription ID
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        
+        #Check the status of the subscription
+        if subscription['status'] == 'active':
+            return True
+        
+        #Subscription is past due, meaning payment failed but it might still be valid
+        elif subscription['status'] == 'past_due':
+            return True
+        
+        #Subscription is not valid anymore
+        else:
+            return False
+        
+    #Catch any errors
+    except Exception as e:
+        return False
 
 
 def confirm_verification_token(token, expiration=3600):
@@ -337,10 +411,18 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/register_primain<primain_n>',methods=['GET', 'POST'])
+@app.route('/register_primain<primain_n>', methods=['GET', 'POST'])
 @login_required
 def register_primain(primain_n):
+    """Enables users to buy their own Primain
 
+    Args:
+        primain_n (str): Primain name (n) 
+
+    Returns:
+        html page: Either a payment page or an error message
+    """
+    
     #If data is submitted
     if request.method == 'POST':
         
@@ -362,118 +444,119 @@ def register_primain(primain_n):
             chain=json.dumps([chain]),
             proof=json.dumps([proof]),
             signature=json.dumps([signature]),
-            user_id=current_user.id
+            user_id=current_user.id,
+            subscription_id=""
         )
         
         #Create message to verify frontend signature
         message = f"{primain_name}{chain}{address}"
         
-        #Initialise Payment success entry for this user
+        #Initialize Payment success entry for this user
         SUCCESSES[current_user.id] = [new_primain, ""]
         
-        #Retrive primain under same name if available
+        #Retrieve primain under the same name if available
         primain = Primain.query.filter_by(primain_name=primain_name).first()
         
-        try:
+        #If Primain object exists
+        if primain:
             
+            #And subscription has expired
+            if not check_subscription_status(primain.subscription_id):
+                
+                #Delete the primain so other users can buy it
+                db.session.delete(primain)
+                db.session.commit()
+                primain = None
+        
+        try:
             #Specific logic for Solana signatures
-            if chain == "Solana" :
+            if chain == "Solana":
                 
                 try:
+                    #If Signature is not already in hex string format, convert it
+                    signature_list = [int(x) for x in proof.split(",")]
+                    proof = convert_signature_to_hex(signature_list)
                     
-                    #If Signature is not already in hex string format convert it
-                    signature_list=[int(x) for x in proof.split(",")]
-                    proof=convert_signature_to_hex(signature_list)
-                    
-                    #If conversion fails throw error
+                    #If conversion fails, throw error
                     if not proof:
                         flash('Signature is invalid!', 'danger')
                         return redirect(url_for('register_primain'))
                     
                     #Otherwise determine validity
-                    valid = crypto_methods.verify_solana_signature(proof,message,address)
                     
+                    valid = crypto_methods.verify_solana_signature(proof, message, address)
                 except:
                     
-                    #If signature was already in hex format an error will trigger the except
-                    valid = crypto_methods.verify_solana_signature(proof,message,address)
-            
-            #Specific logic for Solana signatures
+                    #If signature was already in hex format, an error will trigger the except
+                    valid = crypto_methods.verify_solana_signature(proof, message, address)
+
+            #Specific logic for Bitcoin signatures
             elif chain == "Bitcoin":
                 
-                #If btc address is 34 chars long
+                #If BTC address is 34 chars long
                 if len(request.form['address']) == 34:
-                    
-                    #Dteermine signature validity
-                    valid = crypto_methods.verify_bitcoin_signature(request.form['address'],request.form['proof'],message)
-                    
-                #If it has a different length    
+                    # Determine signature validity
+                    valid = crypto_methods.verify_bitcoin_signature(request.form['address'], request.form['proof'], message)
+                
                 else:
-                    
-                    #Inform user only taproot format is supported
-                    flash('Only Legacy Adress Format Accepted Currently!', 'danger')
+                    flash('Only Legacy Address Format Accepted Currently!', 'danger')
                     return redirect(url_for('register_primain'))
-            
-            #For normal ECDSA signatures     
             else:
                 
-                #Verify using standard signature verification
-                 valid = crypto_methods.verify_signature(proof, message, address)
+                #Verify using standard signature verification for other chains
+                valid = crypto_methods.verify_signature(proof, message, address)
 
-            #If the signature is valid (proving user actually owns wallet)
+            #If the signature is valid (proving user actually owns the wallet)
             if valid:
                 
-                #If the Primain isnt registered yet
+                #If the Primain isn't registered yet
                 if not primain:
-                    
-                    #Get Stripe API key and create a checkout session
+                
+                    #Get the Stripe API key and create a checkout session for subscription
                     stripe.api_key = os.getenv('stripe_key')
+                    
+                    #Use the price ID for the yearly subscription TODO make dynamic pricing
+                    subscription_price_id = 'price_1QbOZkKot5J3VBeNjFZff4Oz' 
+                    
+                    #Create the session
                     session = stripe.checkout.Session.create(
-                        
+                        payment_method_types=['card'],
                         line_items=[{
-                            'price_data': {
-                                'currency': 'eur', 
-                                'product_data': {
-                                    'name': f'Purchase the {primain_name} Primain',
-                                },
-                                'unit_amount': 2000, #Price in cents
-                            },
+                            'price': subscription_price_id, 
                             'quantity': 1,
                         }],
-                        mode='payment',
-                        success_url='http://localhost:5000/success', #Redirects user here on success of payment
-                        cancel_url='http://localhost:5000/register_primain'#Redirects user here on payment failure
+                        mode='subscription',  
+                        success_url='http://localhost:5000/success',  
+                        cancel_url='http://localhost:5000/register_primain',
                     )
 
-                    #Upadte users success from "" to session and redirect the user there
+                    #Update user's successes with the session so it can be verified
                     SUCCESSES[current_user.id] = [new_primain, session]
+                    
+                    #Redirect to the Db logic
                     return redirect(session.url, code=303)
-                
-                #If Primain is already owned
                 else:
                     
-                    #Reverse any uncomitted changes to the DB
+                    #Reverse any uncommitted changes to the DB
                     db.session.rollback()
 
-                    #If user doesnt own the Primain
+                    #If user doesn't own the Primain
                     if primain.user_id != current_user.id:
                         flash('You are not the Owner of this Primain!', 'danger')
-                        
-                    #If if user tries to add an address they already added
+                    
+                    #If user tries to add an address they already added
                     elif proof in json.loads(primain.proof):
                         flash('You have already added this Address to your Primain!', 'danger')
-                        
-                    #If use owns primain and adds new addresss
+                    
                     else:
-                        
                         try:
                             
-                            #Update existing Primain with new adress
+                            #Update existing Primain with new address
                             new_address = json.loads(primain.address)
                             new_address.append(address)
                             primain.address = json.dumps(new_address)
 
-                            #Update existing Primain with new network 
+                            #Update existing Primain with new network
                             new_chain = json.loads(primain.chain)
                             new_chain.append(chain)
                             primain.chain = json.dumps(new_chain)
@@ -494,24 +577,84 @@ def register_primain(primain_n):
                             
                             #Redirect to the owned primains
                             return redirect(url_for('view_owned_primains'))
-
-                        #Catch and display any errors
+                        
                         except:
+                            
                             flash("An error occurred!", 'danger')
-            
-            #Catch and display any errors
             else:
                 flash('Data is invalid, check connected network!', 'danger')
-        
-        #Catch and display any errors
-        except:
+        except ArithmeticError:
             flash('Data is invalid!', 'danger')
 
-    # If it's just a GET request, display the page, either registering or adding page
+    #If it's just a GET request, display the page, either registering or adding page
     if primain_n != "‽":
-        return render_template('add_primain.html',primain_name=primain_n)
+        return render_template('add_primain.html', primain_name=primain_n)
     else:
         return render_template('register_primain.html')
+
+
+@app.route('/success', methods=['GET'])
+@login_required
+def success():
+    """Manages the Primain registration logic after a successful payment
+
+    Returns:
+        html page: Redirects user to the home page
+    """
+    
+    #Retrive the current users Success (Primain object)
+    if SUCCESSES.get(current_user.id):
+        
+        #Get the user's checkout session ID
+        session_id = SUCCESSES[current_user.id][1].id
+        
+        #Retrieve the checkout session
+        checkout_session = stripe.checkout.Session.retrieve(
+            session_id,
+            expand=['line_items'],
+        )
+        
+        #If the payment was successful (subscription payment)
+        if checkout_session.payment_status == "paid":
+            
+            #Get the newly bought Primain and modify the subscription id to reflect the actual id
+            new_primain=SUCCESSES[current_user.id][0]
+            new_primain.subscription_id = checkout_session.subscription
+                        
+            #Add the Primain to DB as the payment was successful
+            db.session.add(new_primain)
+            db.session.commit()
+
+    #Inform the user of any failures
+        else:
+            flash('Payment Failed!', 'danger')
+    else:
+        flash('Register Primain!', 'danger')
+    
+    #Delete payment success (reset for next purchase)
+    del SUCCESSES[current_user.id]
+    
+    #Inform user of success
+    flash('Primain registration successful!', 'success')
+    
+    #Handle affiliate logic if applicable
+    try:
+        
+        #Get affiliate for user
+        aff = Affiliate.query.filter_by(affiliate=current_user.affiliated).first()
+        
+        #If one exists
+        if aff:
+            
+            #Mark how much the user spent and commit TODO make this dynamic
+            aff.spent = aff.spent + 20  
+            db.session.commit()
+    except:
+        pass
+    
+    #Return home page
+    return redirect(url_for("index"))
+
 
 
 @app.route('/signup<affiliate>', methods=['GET', 'POST'])
@@ -622,7 +765,7 @@ def signup():
             return redirect(url_for('login'))
         
         #Catch any errors and inform user
-        except Exception as e:
+        except AttributeError as e:
             db.session.rollback()
             flash('An error occurred during signup. Please try again.', 'danger')
     
@@ -718,69 +861,6 @@ def logout():
     #Redirect to landing page
     return redirect('/')
 
-
-@app.route('/success', methods=['GET'])
-@login_required
-def success():
-    """Handles successful Primain registration.
-
-    Returns:
-        html page: Renders the index page after processing.
-    """
-    
-    #If the payment was successfull
-    if SUCCESSES.get(current_user.id):
-        
-        #Get the usersers checkout session id
-        session_id = SUCCESSES[current_user.id][1].id
-        
-        #Retrive the checkout session
-        checkout_session = stripe.checkout.Session.retrieve(
-            session_id,
-            expand=['line_items'],
-        )
-        
-        #If payment went through 
-        if checkout_session.payment_status == "paid":
-            
-            #Add Primain to DB
-            db.session.add(SUCCESSES[current_user.id][0])
-            db.session.commit()
-            
-        #Inform user of payment failure
-        else:
-            flash('Payment Failed!', 'danger')
-            
-    #If user visits the Page without coming from a redirect
-    else:
-        flash('Register Primain!', 'danger')
-    
-    #Delete payment success (so its reset for next purchase)
-    del SUCCESSES[current_user.id]
-    
-    # Inform user of success
-    flash('Primain registration successful!', 'success')
-    
-    try:
-        
-        #Try retrieving the affiliate
-        aff=Affiliate.query.filter_by(affiliate=current_user.affiliated).first()
-        
-        #If there is an affiliate for the user
-        if aff:
-            
-            #Update spending via the affiliate and update the DB
-            aff.spent = aff.spent+20
-            db.session.commit()
-    
-    #Ignore error which occurs when user is not affiliated with anyone        
-    except:
-        pass
-        
-    #Redirect to the home page
-    return redirect(url_for("index"))
-
-
 def convert_signature_to_hex(signature_ints):
     """Convert a list of integers (signature) to a hexadecimal string. (Used for Solana signatures)
 
@@ -822,8 +902,18 @@ def check_primain_availability():
         # Check if the Primain already exists in the database
         primain = Primain.query.filter_by(primain_name=primain_name).first()
 
-        #If it does sesetnd avilabilty as false
+        #If it does exist set avilabilty as false
         if primain:
+            
+            #If subscription is not valid anymore
+            if not check_subscription_status(primain.subscription_id):
+                
+                #Delete it and mark it as available 
+                db.session.delete(primain)
+                db.session.commit()
+                
+                return jsonify({'available': True})
+                
             return jsonify({'available': False})
         
         #otherwise note avilability
@@ -886,6 +976,19 @@ def delete_address(primain_name):
         #If there is a Primain under this name
         if primain:
             
+            #If subscription expired
+            if not check_subscription_status(primain.subscription_id):
+                
+                #Delete from Db and mark as inactive
+                db.session.delete(primain)
+                db.session.commit()
+                
+                return render_template('delete_adresses.html', 
+                                address=None, 
+                                primain_name=primain_name, 
+                                network=None, 
+                                error='No Addresses linked to this Primain')
+            
             #Render the template with the addresses and the Primain name
             return render_template('delete_adresses.html', 
                                 address=json.loads(primain.address), 
@@ -921,6 +1024,14 @@ def delete_address(primain_name):
             if not primain:
                 return jsonify({'error': 'Primain not found or you do not have permission to delete this address.'}), 404
             
+            #If subscription expired        
+            if not check_subscription_status(primain.subscription_id):
+                
+                #Delete Primain
+                db.session.delete(primain)
+                db.session.commit()
+                return jsonify({'error': 'Primain not found or you do not have permission to delete this address.'}), 404
+                
             #Load existing addresses, chains, proofs, and signatures
             existing_addresses = json.loads(primain.address)
             existing_chains = json.loads(primain.chain)
@@ -947,7 +1058,7 @@ def delete_address(primain_name):
             del existing_chains[index_to_delete]
             del existing_proofs[index_to_delete]
             del existing_signatures[index_to_delete]
-
+            
             #Update the Primain with the new data
             primain.address = json.dumps(existing_addresses)
             primain.chain = json.dumps(existing_chains)
@@ -981,9 +1092,22 @@ def display_address(primain_name):
     
     #Query the database to find the Primain with the given name
     primain = Primain.query.filter_by(primain_name=primain_name.lower()).first()
-    
+        
+            
     #If the Primain is registered
     if primain:
+
+        #If subscription expired
+        if not check_subscription_status(primain.subscription_id):
+            
+            #Delete Primain and return empty template
+            db.session.delete(primain)
+            db.session.commit()
+            return render_template('display_address.html', 
+                                address=None, 
+                                primain_name=primain_name, 
+                                network=None, 
+                                error='No Addresses linked to this Primain')
         
         #Create verification data
         data = (
@@ -1032,6 +1156,15 @@ def get_address():
         
         #If primain is registered redirect the user to the primans page
         if primain:
+            
+            #if Subscription is expired
+            if not check_subscription_status(primain.subscription_id):
+                
+                #Remove primain from the DB
+                db.session.delete(primain)
+                db.session.commit()
+                primain = None
+                
             return jsonify({'redirect': url_for('display_address', primain_name=primain_name)})
         
         #Otherwise alert the user
@@ -1150,13 +1283,14 @@ def manage_account():
     #Render page for logged in user
     user_name = current_user.username
     
+    #Retrieve how much user made by affiliate marketing
     try:
         af=Affiliate.query.filter_by(affiliate=user_name).first()
         balance=af.spent-af.payed_out
     except AttributeError:
         balance=0
     
-    return render_template('manage_account.html', user_name=user_name, earned=balance)
+    return render_template('manage_account.html', user_name=user_name, earned=balance, primains=current_user.primains)
 
 
 @app.route('/TOS')

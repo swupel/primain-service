@@ -30,5 +30,62 @@ Contact Us
         <a href="mailto:contact@primain.org" style="color: #5af0b9; text-decoration: none;">contact@primain.org</a>
     </p>
 
+    <!-- Collapsible Section for Contact Information -->
+    <div class="collapsible">
+        <h2 class="collapsible-header" onclick="toggleForm('contactInfoForm')">Legal Information</h2>
+        <div id="contactInfoForm" class="collapsible-content">
+            <p><strong>Company Name:</strong> Swupel e.U.</p>
+            <p><strong>Registered Address:</strong> Rupertusplatz 1, 1170, Vienna, Austria</p>
+            <p><strong>Email:</strong> <a href="mailto:info@swupelpms.com">info@swupelpms.com</a></p>
+            <p><strong>Phone:</strong> +43 676 5378928</p>
+            <p><strong>Company Registration Number:</strong> 638278w</p>
+            <p><strong>Terms and Conditions:</strong> <a href="/TOS">Read here</a></p>
+            <p><strong>Privacy Policy:</strong> <a href="/privacy">Read here</a></p>
+            <p><strong>Dispute Resolution:</strong> <a href="https://ec.europa.eu/consumers/odr">Online Dispute Resolution</a></p>
+        </div>
+    </div>
 </main>
+
+<script>
+    function toggleForm(formId) {
+        var form = document.getElementById(formId);
+        if (form.style.display === "block") {
+            form.style.display = "none"; // Collapse
+        } else {
+            form.style.display = "block"; // Expand
+        }
+    }
+
+    // Initially hide all form contents
+    document.querySelectorAll('.collapsible-content').forEach(function(content) {
+        content.style.display = 'none';
+    });
+</script>
+
+<style>
+    /* Styling for collapsible sections */
+    .collapsible-header {
+        background-color: #1e1e1e;
+        color: #5af0b9;
+        padding: 15px;
+        cursor: pointer;
+        border: 1px solid #5af0b9;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        transition: background-color 0.3s;
+    }
+
+    .collapsible-header:hover {
+        background-color: #4dc0a1;
+    }
+
+    .collapsible-content {
+        padding: 15px;
+        background-color: #1e1e1e;
+        border: 1px solid #5af0b9;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+</style>
+
 {% endblock %}
