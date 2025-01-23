@@ -45,6 +45,19 @@ mail = Mail(app)
 #Store successes
 SUCCESSES = {}
 
+#Store prices
+PRICE_IDS=[
+    'price_1QcngaKot5J3VBeNVPrjyYhl',
+    'price_1Qcng1Kot5J3VBeNt6IxtnGh',
+    'price_1QcnfQKot5J3VBeNXuw9qxKw',
+    'price_1QcnepKot5J3VBeN73unZz0s',
+    'price_1QcndtKot5J3VBeNjoXAGi2j',
+    'price_1QcncwKot5J3VBeNXH5Qy5A8',
+    'price_1QcncJKot5J3VBeNqZDF6ne3'
+]
+PRICES= [999.0, 550.0, 250.0, 99.0, 50.0, 20.0, 10.0]
+
+
 class User(UserMixin, db.Model):
     """User model to represent registered users.
 
@@ -515,8 +528,13 @@ def register_primain(primain_n):
                     #Get the Stripe API key and create a checkout session for subscription
                     stripe.api_key = os.getenv('stripe_key')
                     
-                    #Use the price ID for the yearly subscription TODO make dynamic pricing
-                    subscription_price_id = 'price_1QbOZkKot5J3VBeNjFZff4Oz' 
+                    #Use the price ID for the yearly subscription (choose dynamically depending on len of the Primain)
+                    if len(primain_name)-1 <= len(PRICE_IDS):
+                        subscription_price_id = PRICE_IDS[len(primain_name)-1]
+                        
+                    #If primain is longer than list take 7+ option
+                    else:
+                        subscription_price_id = PRICE_IDS[-1]
                     
                     #Create the session
                     session = stripe.checkout.Session.create(
@@ -646,8 +664,13 @@ def success():
         #If one exists
         if aff:
             
-            #Mark how much the user spent and commit TODO make this dynamic
-            aff.spent = aff.spent + 20  
+            #Add earnings depending on product price
+            if (len(new_primain.primain_name)-1) <= len(PRICES):
+                
+                aff.spent = PRICES[len(new_primain.primain_name)-1] 
+            else:
+                aff.spent = PRICES[-1] 
+                
             db.session.commit()
     except:
         pass
@@ -1165,7 +1188,7 @@ def get_address():
                 db.session.commit()
                 primain = None
                 
-            return jsonify({'redirect': url_for('display_address', primain_name=primain_name)})
+            return redirect(url_for('display_address', primain_name=primain_name))
         
         #Otherwise alert the user
         else:
