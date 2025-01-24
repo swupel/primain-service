@@ -15,6 +15,7 @@ from nacl.signing import VerifyKey
 import subprocess
 import binascii
 import hashlib
+import getpass
 import base64
 import base58
 import json
@@ -33,7 +34,7 @@ def set_password():
     """
     
     #Ask for password input
-    password = input("Input Password: ")
+    password = getpass.getpass("Input Password: ")
     hash_value = hashlib.sha3_384(password.encode()).hexdigest()
     
     #Hash as often as password is long

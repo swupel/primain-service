@@ -58,6 +58,9 @@
                 {% endif %}
                 <div id="verificationData" style="display:none;">{{ data }}</div>
             </div>
+            {%if network==[] %}
+                <span style="font-size: 18px; color: white;">Primain is owned but has no addresses linked.</span>
+            {%endif%}
         </div>
     </div>
     {% if network != None %}

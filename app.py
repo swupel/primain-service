@@ -180,6 +180,9 @@ def check_subscription_status(subscription_id):
     """
     try:
         
+        #Set API key
+        stripe.api_key = os.getenv('stripe_key')            
+        
         #Retrieve the subscription using the subscription ID
         subscription = stripe.Subscription.retrieve(subscription_id)
         
@@ -441,9 +444,20 @@ def register_primain(primain_n):
         
         #Retrieve data from the form
         primain_name = request.form['primain_name']
+        
+        #If name is too long inform and redirect
+        if len(primain_name) >= 50:
+            flash('Only Names under 50 Characters Permitted!', 'danger')
+            return redirect(url_for("index"))
+        
+        #Retrieve remaining data
         proof = request.form['proof']
         address = request.form['address']
         chain = request.form['chain_string']
+
+        #If user just entered the desired name
+        if proof == "" or address == "" or chain == "":
+            return redirect(url_for("register_primain_without_address",primain_name=primain_name))
         
         #Create signature
         signature = crypto_methods.serialize_signature_to_string(
@@ -469,7 +483,7 @@ def register_primain(primain_n):
         
         #Retrieve primain under the same name if available
         primain = Primain.query.filter_by(primain_name=primain_name).first()
-        
+                
         #If Primain object exists
         if primain:
             
@@ -493,7 +507,7 @@ def register_primain(primain_n):
                     #If conversion fails, throw error
                     if not proof:
                         flash('Signature is invalid!', 'danger')
-                        return redirect(url_for('register_primain'))
+                        return redirect(url_for("index"))
                     
                     #Otherwise determine validity
                     
@@ -513,7 +527,7 @@ def register_primain(primain_n):
                 
                 else:
                     flash('Only Legacy Address Format Accepted Currently!', 'danger')
-                    return redirect(url_for('register_primain'))
+                    return redirect(url_for("index"))
             else:
                 
                 #Verify using standard signature verification for other chains
@@ -544,8 +558,8 @@ def register_primain(primain_n):
                             'quantity': 1,
                         }],
                         mode='subscription',  
-                        success_url='http://localhost:5000/success',  
-                        cancel_url='http://localhost:5000/register_primain',
+                        success_url=request.url_root+'success',  
+                        cancel_url=request.url_root+'home',
                     )
 
                     #Update user's successes with the session so it can be verified
@@ -569,7 +583,7 @@ def register_primain(primain_n):
                     else:
                         try:
                             
-                            #Update existing Primain with new address
+                            #Update existing Primain with new address 
                             new_address = json.loads(primain.address)
                             new_address.append(address)
                             primain.address = json.dumps(new_address)
@@ -601,7 +615,7 @@ def register_primain(primain_n):
                             flash("An error occurred!", 'danger')
             else:
                 flash('Data is invalid, check connected network!', 'danger')
-        except ArithmeticError:
+        except:
             flash('Data is invalid!', 'danger')
 
     #If it's just a GET request, display the page, either registering or adding page
@@ -610,6 +624,95 @@ def register_primain(primain_n):
     else:
         return render_template('register_primain.html')
 
+@app.route('/register_primain_without_address/<primain_name>', methods=['GET'])
+@login_required
+def register_primain_without_address(primain_name):
+    """Enables users to buy their own Primain even without a wallet
+
+    Args:
+        primain_n (str): Primain name (n) 
+
+    Returns:
+        html page: Either a payment page or an error message
+    """
+
+    #Create new Primain object
+    new_primain = Primain(
+        primain_name=primain_name,
+        address=json.dumps([]),
+        chain=json.dumps([]),
+        proof=json.dumps([]),
+        signature=json.dumps([]),
+        user_id=current_user.id,
+        subscription_id=""
+    )
+    
+    #Initialize Payment success entry for this user
+    SUCCESSES[current_user.id] = [new_primain, ""]
+    
+    #Retrieve primain under the same name if available
+    primain = Primain.query.filter_by(primain_name=primain_name).first()
+    
+    #If Primain object exists
+    if primain:
+        
+        #And subscription has expired
+        if not check_subscription_status(primain.subscription_id):
+            
+            #Delete the primain so other users can buy it
+            db.session.delete(primain)
+            db.session.commit()
+            primain = None
+    
+    try:
+        
+        #If the Primain isn't registered yet
+        if not primain:
+        
+            #Get the Stripe API key and create a checkout session for subscription
+            stripe.api_key = os.getenv('stripe_key')
+            
+            #Use the price ID for the yearly subscription (choose dynamically depending on len of the Primain)
+            if len(primain_name)-1 < len(PRICE_IDS):
+                subscription_price_id = PRICE_IDS[len(primain_name)-1]
+                
+            #If primain is longer than list take 7+ option
+            else:
+                subscription_price_id = PRICE_IDS[-1]
+            
+            #Create the session
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': subscription_price_id, 
+                    'quantity': 1,
+                }],
+                mode='subscription',  
+                success_url=request.url_root+'success',  
+                cancel_url=request.url_root+'home',
+            )
+
+            #Update user's successes with the session so it can be verified
+            SUCCESSES[current_user.id] = [new_primain, session]
+            
+            #Redirect to the Db logic
+            return redirect(session.url, code=303)
+        else:
+            
+            #Reverse any uncommitted changes to the DB
+            db.session.rollback()
+
+            #If user doesn't own the Primain
+            if primain.user_id != current_user.id:
+                flash('You are not the Owner of this Primain!', 'danger')
+            else:
+                flash("Add new Addresses to your Primain by clicking the + in owned Primains!",'danger') 
+                
+    except:
+        flash("An error occured!","danger")
+        
+    #Redirect to home page
+    return redirect(url_for("index"))
 
 @app.route('/success', methods=['GET'])
 @login_required
@@ -619,6 +722,8 @@ def success():
     Returns:
         html page: Redirects user to the home page
     """
+    #Set API key
+    stripe.api_key = os.getenv('stripe_key')                 
     
     #Retrive the current users Success (Primain object)
     if SUCCESSES.get(current_user.id):
@@ -680,7 +785,7 @@ def success():
 
 
 
-@app.route('/signup<affiliate>', methods=['GET', 'POST'])
+@app.route('/signup/<affiliate>', methods=['GET', 'POST'])
 def signup_affiliate(affiliate):
     """Handles signing up via an affiliate link
 
@@ -706,8 +811,8 @@ def signup_affiliate(affiliate):
             
         #Create hashed password and user
         hashed_password = generate_password_hash(password, method='scrypt')
-        new_user = User(username=username, password=hashed_password, email=email, email_verified=True,affiliated=affiliate)
-
+        new_user = User(username=username, password=hashed_password, email=email, email_verified=False,affiliated=affiliate)
+        success=False
         try:
             
             #Try adding a new user
@@ -715,37 +820,61 @@ def signup_affiliate(affiliate):
             db.session.commit()
 
             # Send verification email
-           # send_verification_email(email)
-            flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
-        
             try:
-                
-                #Get affiliate
-                aff=Affiliate.query.filter_by(affiliate=affiliate).first()
-                
-                #Load all user_ids which signed up via affiliate and append new one
-                user_ids=json.loads(aff.user_ids)
-                user_ids.append(new_user.id)
-                
-                #Encode and save them
-                aff.user_ids=json.dumps(user_ids)
-                db.session.commit()
-                
+                send_verification_email(email)
+                flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
+
+                success=True
+                #Then redirect user to log in 
+            
             except:
                 
-                #If its the first refferal create a new Affiliate and save them to the DB
-                new_refferal=Affiliate(affiliate=affiliate,spent=0,payed_out=0,user_ids=json.dumps([new_user.id]))
-                db.session.add(new_refferal)
-                db.session.commit()
+                #Inform user
+                flash('Our Email Servers are Overworked. Try Again in a few Minutes.', 'danger')
+                success = False
+                
+            if success:
+                
+                try:
+                    
+                    #Get affiliate
+                    aff=Affiliate.query.filter_by(affiliate=affiliate).first()
+                    
+                    #Load all user_ids which signed up via affiliate and append new one
+                    user_ids=json.loads(aff.user_ids)
+                    user_ids.append(new_user.id)
+                    
+                    #Encode and save them
+                    aff.user_ids=json.dumps(user_ids)
+                    db.session.commit()
+                    
+                except:
+                    
+                    #If its the first refferal create a new Affiliate and save them to the DB
+                    new_refferal=Affiliate(affiliate=affiliate,spent=0,payed_out=0,user_ids=json.dumps([new_user.id]))
+                    db.session.add(new_refferal)
+                    db.session.commit()
+                
+                #Then redirect user to log in        
+                return redirect(url_for('login'))
             
-            #Then redirect user to log in        
-            return redirect(url_for('login'))
-        
         #Catch any errors and inform user
         except Exception as e:
+            flash('Username or Email is already taken.', 'danger')
+        finally:
             db.session.rollback()
-            print(e)
-            flash('An error occurred during signup. Please try again.', 'danger')
+            if not success:
+                
+                #Rollback
+                db.session.rollback()
+                
+                #Query for the user you want to delete (assuming new_user has a unique identifier like an id)
+                user_to_delete = User.query.filter_by(id=new_user.id).first()
+
+                #Check if user exists and delete
+                if user_to_delete:
+                    db.session.delete(user_to_delete)
+                    db.session.commit()
 
     #If get request... jsut render the page
     return render_template('signup.html')
@@ -773,26 +902,47 @@ def signup():
         #Create hashed password and user
         hashed_password = generate_password_hash(password, method='scrypt')
         new_user = User(username=username, password=hashed_password, email=email, email_verified=False, affiliated="")
-
+        success=False
         try:
             
             #Try adding a new user
             db.session.add(new_user)
             db.session.commit()
-
+            
             # Send verification email
-            send_verification_email(email)
-            flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
-        
-            #Then redirect user to log in 
-            return redirect(url_for('login'))
+            try:
+                
+                send_verification_email(email)
+                flash('Signup successful! A verification email has been sent. Please verify your email.', 'success')
+
+                success=True
+                #Then redirect user to log in 
+                return redirect(url_for('login'))
+            
+            except:
+                flash('Our Email Servers are Overworked. Try Again in a few Minutes.', 'danger')
         
         #Catch any errors and inform user
-        except AttributeError as e:
-            db.session.rollback()
-            flash('An error occurred during signup. Please try again.', 'danger')
+        except:
+                
+            flash('Username or Email is already taken.', 'danger')
+        
+        finally:
+            
+            if not success:
+                
+                #Rollback
+                db.session.rollback()
+                
+                #Query for the user you want to delete (assuming new_user has a unique identifier like an id)
+                user_to_delete = User.query.filter_by(id=new_user.id).first()
+
+                #Check if user exists and delete
+                if user_to_delete:
+                    db.session.delete(user_to_delete)
+                    db.session.commit()
     
-    #If get request... jsut render the page
+    #If get request... just render the page
     return render_template('signup.html')
 
 
@@ -1192,7 +1342,9 @@ def get_address():
         
         #Otherwise alert the user
         else:
-            return jsonify({'error': 'No Primain With This Name was Found!'})
+            
+            flash('No Wallets Associated with this Primain', 'danger')
+            return render_template('get_address.html')
 
     #Return the page up on get request
     return render_template('get_address.html')
@@ -1271,7 +1423,7 @@ def change_password():
     new_password = request.form['new_password']
     
     #Verify new password is secure according to NIST 20204 guidelines
-    if new_password <= 12:
+    if len(new_password) <= 12:
         flash('Password must be atleast 12 characters long!', 'danger')
         return redirect(url_for('manage_account'))
 
@@ -1312,6 +1464,9 @@ def manage_account():
         balance=af.spent-af.payed_out
     except AttributeError:
         balance=0
+        
+    #10% commission
+    balance=balance*0.1
     
     return render_template('manage_account.html', user_name=user_name, earned=balance, primains=current_user.primains)
 
@@ -1376,8 +1531,8 @@ def submit_contact_form():
 #Run file if executed directly
 if __name__ == '__main__':
     
-    
     #Create/Load database and then run app
     with app.app_context():
         db.create_all()
+        
     app.run(debug=True)
