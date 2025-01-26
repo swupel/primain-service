@@ -26,7 +26,7 @@ import os
 load_dotenv()
 
 
-def set_password():
+def set_password(password=False):
     """Set system password
 
     Returns:
@@ -34,7 +34,9 @@ def set_password():
     """
     
     #Ask for password input
-    password = getpass.getpass("Input Password: ")
+    if not password:
+        password = getpass.getpass("Input Password: ")
+        
     hash_value = hashlib.sha3_384(password.encode()).hexdigest()
     
     #Hash as often as password is long
@@ -46,7 +48,7 @@ def set_password():
 
 
 #Set Password as constant
-PASSWORD = set_password()
+PASSWORD = set_password(os.getenv('password'))
 
 
 def verify_solana_signature(signature, message, public_key):

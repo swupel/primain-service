@@ -3,7 +3,6 @@ from flask_login import login_required, current_user, login_user, LoginManager, 
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
-from datetime import datetime, timedelta
 from sqlalchemy.orm import relationship
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
@@ -427,7 +426,8 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/register_primain<primain_n>', methods=['GET', 'POST'])
+@app.route('/register_primain/', defaults={'primain_n': None}, methods=['GET', 'POST'])
+@app.route('/register_primain/<primain_n>', methods=['GET', 'POST'])
 @login_required
 def register_primain(primain_n):
     """Enables users to buy their own Primain
@@ -619,10 +619,11 @@ def register_primain(primain_n):
             flash('Data is invalid!', 'danger')
 
     #If it's just a GET request, display the page, either registering or adding page
-    if primain_n != "‽":
+    if primain_n != None:
         return render_template('add_primain.html', primain_name=primain_n)
     else:
         return render_template('register_primain.html')
+
 
 @app.route('/register_primain_without_address/<primain_name>', methods=['GET'])
 @login_required
@@ -714,6 +715,7 @@ def register_primain_without_address(primain_name):
     #Redirect to home page
     return redirect(url_for("index"))
 
+
 @app.route('/success', methods=['GET'])
 @login_required
 def success():
@@ -754,9 +756,12 @@ def success():
     else:
         flash('Register Primain!', 'danger')
     
-    #Delete payment success (reset for next purchase)
-    del SUCCESSES[current_user.id]
-    
+    try:
+        #Delete payment success (reset for next purchase)
+        del SUCCESSES[current_user.id]
+    except:
+        pass
+        
     #Inform user of success
     flash('Primain registration successful!', 'success')
     
@@ -782,7 +787,6 @@ def success():
     
     #Return home page
     return redirect(url_for("index"))
-
 
 
 @app.route('/signup/<affiliate>', methods=['GET', 'POST'])
@@ -1535,4 +1539,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         
-    app.run(debug=True)
+    app.run()
