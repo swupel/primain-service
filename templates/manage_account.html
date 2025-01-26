@@ -17,11 +17,11 @@
                     <div>
                         <label for="username">New Username:</label>
                         <span id="username-status"></span>
-                        <input type="text" id="username" name="username" required>
+                        <input type="text" id="username" name="username" style="width: 94%;" required >
                     </div>
                     <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
-                    <button type="submit" class="form-button">Change Username</button>
+                    <input type="password" id="password" name="password" style="width: 94%;" required>
+                    <button type="submit" style="width: 100%;" class="form-button">Change Username</button>
                 </form>
             </div>
         </div>
@@ -32,10 +32,10 @@
             <div id="passwordForm" class="collapsible-content">
                 <form action="/change_password" method="POST">
                     <label for="current_password">Current Password:</label>
-                    <input type="password" id="current_password" name="current_password" required>
+                    <input type="password" id="current_password" name="current_password" style="width: 94%;" required>
                     <label for="new_password">New Password:</label>
-                    <input type="password" id="new_password" name="new_password" required>
-                    <button type="submit" class="form-button">Change Password</button>
+                    <input type="password" id="new_password" name="new_password" style="width: 94%;" required>
+                    <button type="submit" class="form-button" style="width: 100%;" >Change Password</button>
                 </form>
             </div>
         </div>
@@ -45,11 +45,11 @@
             <h2 class="collapsible-header" onclick="toggleForm('affiliateLinkSection')">Generate Affiliate Link</h2>
             <div id="affiliateLinkSection" class="collapsible-content">
                 <p style="font-weight: bold;">You earned $<span style="color:#5af0b9;">{{ earned }}</span> by being an affiliate!</p>
-                <p>Share the following link with your friends to earn rewards:</p>
+                <p>Share the following link with friends to earn rewards:</p>
                 <div>
-                    <input type="text" id="affiliate_link" readonly value="/signup/{{ user_name }}">
+                    <input type="text" id="affiliate_link" style="width: 94%;"  readonly value="https://swupel.com/signup/{{ user_name }}">
                 </div>
-                <button onclick="copyAffiliateLink()" class="form-button small-button">Copy Affiliate Link</button>
+                <button onclick="copyAffiliateLink()" style="width: 100%;"  class="form-button small-button">Copy Affiliate Link</button>
             </div>
         </div>
 
@@ -59,9 +59,9 @@
                 {% if primains %}
                 <ul>
                     {% for primain in primains %}
-                        <li>
+                        <li style="width: 80%;">
                             <!-- Link to the primain -->
-                            <a href="/{{ primain.primain_name }}" class="primain-link">{{ primain.primain_name }}</a>
+                            <a href="/{{ primain.primain_name }}" class="primain-link">{{ primain.primain_name }} </a>
         
                             <!-- Small button next to the link to add a new address -->
                             <a href="javascript:void(0);" style="color:#5af0b9;" onclick="confirmCancelSubscription('{{ primain.primain_name }}')">Cancel</a>
@@ -74,7 +74,8 @@
             </div>
         </div>
     </div>
-    <a href="/logout" class="button">Logout</a>
+    <a href="/logout" class="button logout-button">Logout</a>
+    <div class="spacer" style="height: 80px;"></div>
 </main>
 
 <script>
@@ -210,6 +211,19 @@
 #affiliate_link {
     width: calc(100% - 22px); /* Adjusting width to include padding and border */
     height: 20px;
+}
+
+.logout-button {
+    display: inline-block;
+    margin-left: 15%;
+    padding: 15px 30px;
+    background-color:rgba(217, 84, 79, 0.49);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    width: 100%;
+    text-align: center;
+    max-width: 200px; /* Optional: Limit the max width for the button */
 }
 </style>
 

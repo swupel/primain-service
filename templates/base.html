@@ -65,7 +65,24 @@
           window.location.href = "login"
         }
         ;})
-        
+    
+        document.addEventListener("DOMContentLoaded", function () {
+          // Find all messages in the container
+          const messages = document.querySelectorAll('.message');
+  
+          // Set a timer to fade out each message after 5 seconds
+          messages.forEach((message) => {
+              setTimeout(() => {
+                  message.style.transition = "opacity 1s ease";
+                  message.style.opacity = "0"; // Fade out
+  
+                  // After fading out, remove the element from the DOM
+                  setTimeout(() => {
+                      message.remove();
+                  }, 1000); // Matches the duration of the fade-out effect
+              }, 5000); // Delay before fade-out starts
+          });
+      });
 
     </script>
 
